@@ -1,7 +1,7 @@
 #include "fluid_cell_buffer.h"
 
-FluidCellBuffer::FluidCellBuffer():
-	_data(3*128*128, GLfloat{}) {
+FluidCellBuffer::FluidCellBuffer(GLuint nX, GLuint nY):
+	_data(3*nX*nY, GLfloat{}) {
 	glGenVertexArrays(1, &_array);
 	glGenBuffers(1, &_buffer);
 

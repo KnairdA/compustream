@@ -2,16 +2,18 @@
 
 #include <fstream>
 
-LatticeCellBuffer::LatticeCellBuffer():
-	_data(9*128*128, GLfloat{1./9.}) {
+LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY):
+	_data(9*nX*nY, GLfloat{1./9.}) {
 	glGenVertexArrays(1, &_array);
 	glGenBuffers(1, &_buffer);
 
-	for (int x = 50; x < 128-50; x++) {
-		for (int y = 50; y < 128-50; y++) {
+	const int inset = 0.4*nX;
+
+	for (int x = inset; x < nX-inset; x++) {
+		for (int y = inset; y < nY-inset; y++) {
 			for ( int i = -1; i <= 1; ++i ) {
 				for ( int j = -1; j <= 1; ++j ) {
-					_data[9*128*y + 9*x + (i+1)*3 + j+1] = 1./128.;
+					_data[9*nX*y + 9*x + (i+1)*3 + j+1] = 1./64.;
 				}
 			}
 		}

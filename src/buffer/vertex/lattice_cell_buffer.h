@@ -12,7 +12,7 @@ private:
 	GLuint _buffer;
 
 public:
-	LatticeCellBuffer();
+	LatticeCellBuffer(GLuint nX, GLuint nY);
 	~LatticeCellBuffer();
 
 	GLuint getBuffer() const;

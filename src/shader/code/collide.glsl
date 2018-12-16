@@ -2,34 +2,43 @@ static const std::string COLLIDE_SHADER_CODE = R"(
 #version 430
 
 layout (local_size_x = 1, local_size_y = 1) in;
+
 layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
 layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
 layout (std430, binding=3) buffer bufferFluid{   float fluidCells[]; };
 
+uniform uint nX;
+uniform uint nY;
+
+const uint  q     = 9;
+const float omega = 0.6;
+
+const float velocityDisplayScalar = 500.;
+
 float get(uint x, uint y, int i, int j) {
-	return collideCells[9*128*y + 9*x + (i+1)*3 + j+1];
+	return collideCells[q*nX*y + q*x + (i+1)*3 + j+1];
 }
 
 void set(uint x, uint y, int i, int j, float v) {
-	collideCells[9*128*y + 9*x + (i+1)*3 + j+1] = v;
+	collideCells[q*nX*y + q*x + (i+1)*3 + j+1] = v;
 }
 
 void setFluid(uint x, uint y, vec2 v, float d) {
-	fluidCells[3*128*y + 3*x + 0] = float(x)-64. + 10.*v.x;
-	fluidCells[3*128*y + 3*x + 1] = float(y)-64. + 10.*v.y;
-	fluidCells[3*128*y + 3*x + 2] = d;
+	fluidCells[3*nX*y + 3*x + 0] = float(x)-nX/2 + velocityDisplayScalar*v.x;
+	fluidCells[3*nX*y + 3*x + 1] = float(y)-nY/2 + velocityDisplayScalar*v.y;
+	fluidCells[3*nX*y + 3*x + 2] = d;
 }
 
 float density(uint x, uint y) {
-	return collideCells[9*128*y + 9*x + 0]
-	     + collideCells[9*128*y + 9*x + 1]
-	     + collideCells[9*128*y + 9*x + 2]
-	     + collideCells[9*128*y + 9*x + 3]
-	     + collideCells[9*128*y + 9*x + 4]
-	     + collideCells[9*128*y + 9*x + 5]
-	     + collideCells[9*128*y + 9*x + 6]
-	     + collideCells[9*128*y + 9*x + 7]
-	     + collideCells[9*128*y + 9*x + 8];
+	return collideCells[q*nX*y + q*x + 0]
+	     + collideCells[q*nX*y + q*x + 1]
+	     + collideCells[q*nX*y + q*x + 2]
+	     + collideCells[q*nX*y + q*x + 3]
+	     + collideCells[q*nX*y + q*x + 4]
+	     + collideCells[q*nX*y + q*x + 5]
+	     + collideCells[q*nX*y + q*x + 6]
+	     + collideCells[q*nX*y + q*x + 7]
+	     + collideCells[q*nX*y + q*x + 8];
 }
 
 vec2 velocity(uint x, uint y, float d) {
@@ -76,8 +85,6 @@ float norm(vec2 v) {
 void main() {
 	const uint x = gl_GlobalInvocationID.x;
 	const uint y = gl_GlobalInvocationID.y;
-
-	const float omega = 0.6;
 
 	const float d = density(x,y);
 	const vec2  v = velocity(x,y,d);

@@ -22,6 +22,9 @@
 
 #include "timer.h"
 
+constexpr GLuint nX = 128;
+constexpr GLuint nY = 128;
+
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
 }
@@ -53,7 +56,7 @@ int renderWindow() {
 	int window_width  = window.getWidth();
 	int window_height = window.getHeight();
 
-	float world_width  = 256.0;
+	float world_width  = 2*nX;
 	float world_height = getWorldHeight(window_width, window_height, world_width);
 
 	glm::mat4 MVP = getMVP(world_width,  world_height);
@@ -71,12 +74,12 @@ int renderWindow() {
 		scene_shader = std::make_unique<GraphicShader>(
 			VERTEX_SHADER_CODE, FRAGMENT_SHADER_CODE);
 
-		lattice_buffer_a = std::make_unique<LatticeCellBuffer>();
-		lattice_buffer_b = std::make_unique<LatticeCellBuffer>();
-		fluid_buffer = std::make_unique<FluidCellBuffer>();
+		lattice_buffer_a = std::make_unique<LatticeCellBuffer>(nX, nY);
+		lattice_buffer_b = std::make_unique<LatticeCellBuffer>(nX, nY);
+		fluid_buffer     = std::make_unique<  FluidCellBuffer>(nX, nY);
 
 		collide_shader = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
-		stream_shader = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
+		stream_shader  = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
 	});
 
 	if ( !collide_shader->isGood() || !stream_shader->isGood() ) {
@@ -107,7 +110,7 @@ int renderWindow() {
 		}
 
 		if ( update_lattice ) {
-			if ( timer::millisecondsSince(last_frame) >= 1000/25 ) {
+			if ( timer::millisecondsSince(last_frame) >= 1000/50 ) {
 				if ( tick ) {
 					collide_shader->workOn(lattice_buffer_a->getBuffer(), lattice_buffer_b->getBuffer(), fluid_buffer->getBuffer());
 					stream_shader->workOn(lattice_buffer_a->getBuffer(), lattice_buffer_b->getBuffer(), fluid_buffer->getBuffer());
@@ -120,11 +123,11 @@ int renderWindow() {
 
 				{
 					auto guard = collide_shader->use();
-					collide_shader->dispatch();
+					collide_shader->dispatch(nX, nY);
 				}
 				{
 					auto guard = stream_shader->use();
-					stream_shader->dispatch();
+					stream_shader->dispatch(nX, nY);
 				}
 
 				last_frame = timer::now();

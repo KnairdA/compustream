@@ -40,12 +40,20 @@ GLuint ComputeShader::setUniform(const std::string& name, float x, float y) cons
 	return id;
 }
 
+GLuint ComputeShader::setUniform(const std::string& name, unsigned int value) const {
+	GLuint id = util::getUniform(_id, name);
+	glUniform1ui(id, value);
+	return id;
+}
+
 void ComputeShader::workOn(GLuint bufferA, GLuint bufferB, GLuint bufferC) const {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bufferA);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bufferB);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, bufferC);
 }
 
-void ComputeShader::dispatch() const {
-	glDispatchCompute(128, 128, 1);
+void ComputeShader::dispatch(GLuint nX, GLuint nY) const {
+	setUniform("nX", nX);
+	setUniform("nY", nY);
+	glDispatchCompute(nX, nY, 1);
 }

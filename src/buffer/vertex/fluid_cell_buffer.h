@@ -12,7 +12,7 @@ private:
 	GLuint _buffer;
 
 public:
-	FluidCellBuffer();
+	FluidCellBuffer(GLuint nX, GLuint nY);
 	~FluidCellBuffer();
 
 	GLuint getBuffer() const;

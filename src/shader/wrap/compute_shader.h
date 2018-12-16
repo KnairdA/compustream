@@ -26,7 +26,8 @@ public:
 	bool isGood() const;
 
 	GLuint setUniform(const std::string& name, float x, float y) const;
+	GLuint setUniform(const std::string& name, unsigned int value) const;
 
 	void workOn(GLuint bufferA, GLuint bufferB, GLuint bufferC) const;
-	void dispatch() const;
+	void dispatch(GLuint nX, GLuint nY) const;
 };
