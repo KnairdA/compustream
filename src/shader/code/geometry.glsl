@@ -30,8 +30,10 @@ void emitSquareAt(vec4 position) {
 }
 
 void main() {
-	color = gs_in[0].color;
-	emitSquareAt(gl_in[0].gl_Position);
-	EndPrimitive();
+	if ( gl_in[0].gl_Position.xyz != vec3(0.,0.,0.) ) {
+		color = gs_in[0].color;
+		emitSquareAt(gl_in[0].gl_Position);
+		EndPrimitive();
+	}
 }
 )";

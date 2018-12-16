@@ -13,7 +13,7 @@ uniform uint nY;
 const uint  q     = 9;
 const float omega = 0.6;
 
-const float displayAmplifier = 50.;
+const float displayAmplifier = 1000.;
 
 float get(uint x, uint y, int i, int j) {
 	return collideCells[q*nX*y + q*x + (i+1)*3 + j+1];

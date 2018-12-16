@@ -4,7 +4,7 @@ static const std::string VERTEX_SHADER_CODE = R"(
 layout (location=0) in vec3 VertexPosition;
 
 out VS_OUT {
-    vec3 color;
+	vec3 color;
 } vs_out;
 
 void main() {
