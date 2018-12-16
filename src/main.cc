@@ -14,6 +14,7 @@
 #include "shader/wrap/graphic_shader.h"
 #include "shader/wrap/compute_shader.h"
 
+#include "shader/code/geometry.glsl"
 #include "shader/code/vertex.glsl"
 #include "shader/code/fragment.glsl"
 
@@ -72,7 +73,7 @@ int renderWindow() {
 
 	window.init([&]() {
 		scene_shader = std::make_unique<GraphicShader>(
-			VERTEX_SHADER_CODE, FRAGMENT_SHADER_CODE);
+			VERTEX_SHADER_CODE, GEOMETRY_SHADER_CODE, FRAGMENT_SHADER_CODE);
 
 		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
 		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);

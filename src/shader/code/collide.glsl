@@ -13,7 +13,7 @@ uniform uint nY;
 const uint  q     = 9;
 const float omega = 0.6;
 
-const float velocityDisplayScalar = 500.;
+const float displayAmplifier = 50.;
 
 float get(uint x, uint y, int i, int j) {
 	return collideCells[q*nX*y + q*x + (i+1)*3 + j+1];
@@ -24,8 +24,8 @@ void set(uint x, uint y, int i, int j, float v) {
 }
 
 void setFluid(uint x, uint y, vec2 v, float d) {
-	fluidCells[3*nX*y + 3*x + 0] = float(x)-nX/2 + velocityDisplayScalar*v.x;
-	fluidCells[3*nX*y + 3*x + 1] = float(y)-nY/2 + velocityDisplayScalar*v.y;
+	fluidCells[3*nX*y + 3*x + 0] = float(x)-nX/2 + displayAmplifier*v.x;
+	fluidCells[3*nX*y + 3*x + 1] = float(y)-nY/2 + displayAmplifier*v.y;
 	fluidCells[3*nX*y + 3*x + 2] = d;
 }
 

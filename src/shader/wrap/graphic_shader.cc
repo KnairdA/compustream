@@ -15,6 +15,16 @@ GraphicShader::Guard GraphicShader::use() const {
 	return Guard(_id);
 }
 
+GraphicShader::GraphicShader(const std::string& vertex,
+                             const std::string& geometry,
+                             const std::string fragment):
+	_id(glCreateProgram()) {
+	glAttachShader(_id, util::compileShader(vertex, GL_VERTEX_SHADER));
+	glAttachShader(_id, util::compileShader(geometry, GL_GEOMETRY_SHADER));
+	glAttachShader(_id, util::compileShader(fragment, GL_FRAGMENT_SHADER));
+	glLinkProgram(_id);
+}
+
 GraphicShader::GraphicShader(const std::string& vertex, const std::string fragment):
 	_id(glCreateProgram()) {
 	glAttachShader(_id, util::compileShader(vertex, GL_VERTEX_SHADER));

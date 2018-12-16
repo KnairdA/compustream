@@ -1,5 +1,10 @@
 static const std::string FRAGMENT_SHADER_CODE = R"(
+#version 430
+
+in  vec3 color;
+out vec4 FragColor;
+
 void main() {
-	gl_FragColor = gl_Color;
+	FragColor = vec4(color.xyz, 0.0);
 }
 )";

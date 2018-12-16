@@ -20,6 +20,7 @@ public:
 
 	Guard use() const;
 
+	GraphicShader(const std::string& vertex, const std::string& geometry, const std::string fragment);
 	GraphicShader(const std::string& vertex, const std::string fragment);
 	~GraphicShader();
 

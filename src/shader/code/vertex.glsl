@@ -1,8 +1,14 @@
 static const std::string VERTEX_SHADER_CODE = R"(
-uniform mat4 MVP;
+#version 430
+
+layout (location=0) in vec3 VertexPosition;
+
+out VS_OUT {
+    vec3 color;
+} vs_out;
 
 void main() {
-	gl_Position = MVP * vec4(gl_Vertex.xy, 0.0, 1.0);
-	gl_FrontColor = gl_Vertex.z * vec4(1., 0., 0., 0.);
+	gl_Position  = vec4(VertexPosition.xy, 0., 1.);
+	vs_out.color = vec3(VertexPosition.z, 0., 0.);
 }
 )";
