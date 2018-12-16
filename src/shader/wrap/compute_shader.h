@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include <GL/glew.h>
 
@@ -28,6 +29,7 @@ public:
 	GLuint setUniform(const std::string& name, float x, float y) const;
 	GLuint setUniform(const std::string& name, unsigned int value) const;
 
-	void workOn(GLuint bufferA, GLuint bufferB, GLuint bufferC) const;
+	void workOn(const std::vector<GLuint>& buffers) const;
+
 	void dispatch(GLuint nX, GLuint nY) const;
 };

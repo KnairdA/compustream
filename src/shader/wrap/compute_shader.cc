@@ -46,10 +46,8 @@ GLuint ComputeShader::setUniform(const std::string& name, unsigned int value) co
 	return id;
 }
 
-void ComputeShader::workOn(GLuint bufferA, GLuint bufferB, GLuint bufferC) const {
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bufferA);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, bufferB);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, bufferC);
+void ComputeShader::workOn(const std::vector<GLuint>& buffers) const {
+	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 1, buffers.size(), buffers.data());
 }
 
 void ComputeShader::dispatch(GLuint nX, GLuint nY) const {

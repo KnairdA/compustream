@@ -63,9 +63,9 @@ int renderWindow() {
 
 	std::unique_ptr<GraphicShader> scene_shader;
 
-	std::unique_ptr<LatticeCellBuffer> lattice_buffer_a;
-	std::unique_ptr<LatticeCellBuffer> lattice_buffer_b;
-	std::unique_ptr<FluidCellBuffer>   fluid_buffer;
+	std::unique_ptr<LatticeCellBuffer> lattice_a;
+	std::unique_ptr<LatticeCellBuffer> lattice_b;
+	std::unique_ptr<FluidCellBuffer>   fluid;
 
 	std::unique_ptr<ComputeShader> collide_shader;
 	std::unique_ptr<ComputeShader> stream_shader;
@@ -74,16 +74,16 @@ int renderWindow() {
 		scene_shader = std::make_unique<GraphicShader>(
 			VERTEX_SHADER_CODE, FRAGMENT_SHADER_CODE);
 
-		lattice_buffer_a = std::make_unique<LatticeCellBuffer>(nX, nY);
-		lattice_buffer_b = std::make_unique<LatticeCellBuffer>(nX, nY);
-		fluid_buffer     = std::make_unique<  FluidCellBuffer>(nX, nY);
+		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
+		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);
+		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY);
 
 		collide_shader = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
 		stream_shader  = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
 	});
 
 	if ( !collide_shader->isGood() || !stream_shader->isGood() ) {
-		std::cerr << "Compute shader error. Check vector field definition." << std::endl;
+		std::cerr << "Compute shader error." << std::endl;
 		return -1;
 	}
 
@@ -94,6 +94,9 @@ int renderWindow() {
 
 	auto pause_key = window.getKeyWatcher(GLFW_KEY_SPACE);
 
+	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
+	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
+
 	window.render([&]() {
 		if ( pause_key.wasClicked() ) {
 			update_lattice = !update_lattice;
@@ -103,21 +106,22 @@ int renderWindow() {
 		     || window.getHeight() != window_height ) {
 			window_width  = window.getWidth();
 			window_height = window.getHeight();
+
 			glViewport(0, 0, window_width, window_height);
 
-			world_height  = getWorldHeight(window_width, window_height, world_width);
+			world_height = getWorldHeight(window_width, window_height, world_width);
 			MVP = getMVP(world_width, world_height);
 		}
 
 		if ( update_lattice ) {
-			if ( timer::millisecondsSince(last_frame) >= 1000/50 ) {
+			if ( timer::millisecondsSince(last_frame) >= 1000/25 ) {
 				if ( tick ) {
-					collide_shader->workOn(lattice_buffer_a->getBuffer(), lattice_buffer_b->getBuffer(), fluid_buffer->getBuffer());
-					stream_shader->workOn(lattice_buffer_a->getBuffer(), lattice_buffer_b->getBuffer(), fluid_buffer->getBuffer());
+					collide_shader->workOn(tick_buffers);
+					stream_shader->workOn(tick_buffers);
 					tick = false;
 				} else {
-					collide_shader->workOn(lattice_buffer_b->getBuffer(), lattice_buffer_a->getBuffer(), fluid_buffer->getBuffer());
-					stream_shader->workOn(lattice_buffer_b->getBuffer(), lattice_buffer_a->getBuffer(), fluid_buffer->getBuffer());
+					collide_shader->workOn(tock_buffers);
+					stream_shader->workOn(tock_buffers);
 					tick = true;
 				}
 
@@ -132,15 +136,15 @@ int renderWindow() {
 
 				last_frame = timer::now();
 			}
+		}
 
-			{
-				auto sdrGuard = scene_shader->use();
+		{
+			auto guard = scene_shader->use();
 
-				scene_shader->setUniform("MVP", MVP);
+			scene_shader->setUniform("MVP", MVP);
 
-				glClear(GL_COLOR_BUFFER_BIT);
-				fluid_buffer->draw();
-			}
+			glClear(GL_COLOR_BUFFER_BIT);
+			fluid->draw();
 		}
 	});
 
