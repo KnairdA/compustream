@@ -7,13 +7,24 @@ layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
 layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
 layout (std430, binding=3) buffer bufferFluid{   float fluidCells[]; };
 
+const float displayAmplifier = 10.;
+
+/// LBM constants
+
 uniform uint nX;
 uniform uint nY;
 
-const uint  q     = 9;
-const float omega = 0.6;
+const uint  q         = 9;
+const float weight[q] = float[](
+	1./36., 1./9., 1./36.,
+	1./9. , 4./9., 1./9. ,
+	1./36 , 1./9., 1./36.
+);
 
-const float displayAmplifier = 10.;
+const float tau   = 0.8;
+const float omega = 1/tau;
+
+/// Vector utilities
 
 float comp(int x, int y, vec2 v) {
 	return x*v.x + y*v.y;
@@ -27,30 +38,54 @@ float norm(vec2 v) {
 	return sqrt(sq(v.x)+sq(v.y));
 }
 
+/// Array indexing
+
+uint indexOfDirection(int i, int j) {
+	return 3*(j+1) + (i+1);
+}
+
+uint indexOfLatticeCell(uint x, uint y) {
+	return q*nX*y + q*x;
+}
+
+uint indexOfFluidVertex(uint x, uint y) {
+	return 3*nX*y + 3*x;
+}
+
+/// Data access
+
+float w(int i, int j) {
+	return weight[indexOfDirection(i,j)];
+}
+
 float get(uint x, uint y, int i, int j) {
-	return collideCells[q*nX*y + q*x + (i+1)*3 + j+1];
+	return collideCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)];
 }
 
 void set(uint x, uint y, int i, int j, float v) {
-	collideCells[q*nX*y + q*x + (i+1)*3 + j+1] = v;
+	collideCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
 }
 
 void setFluid(uint x, uint y, vec2 v, float d) {
-	fluidCells[3*nX*y + 3*x + 0] = float(x)-nX/2;// + displayAmplifier*v.x;
-	fluidCells[3*nX*y + 3*x + 1] = float(y)-nY/2;// + displayAmplifier*v.y;
-	fluidCells[3*nX*y + 3*x + 2] = displayAmplifier * norm(v);
+	const uint idx = indexOfFluidVertex(x, y);
+	fluidCells[idx + 0] = float(x) - nX/2;
+	fluidCells[idx + 1] = float(y) - nY/2;
+	fluidCells[idx + 2] = displayAmplifier * norm(v);
 }
 
+/// Moments
+
 float density(uint x, uint y) {
-	return collideCells[q*nX*y + q*x + 0]
-	     + collideCells[q*nX*y + q*x + 1]
-	     + collideCells[q*nX*y + q*x + 2]
-	     + collideCells[q*nX*y + q*x + 3]
-	     + collideCells[q*nX*y + q*x + 4]
-	     + collideCells[q*nX*y + q*x + 5]
-	     + collideCells[q*nX*y + q*x + 6]
-	     + collideCells[q*nX*y + q*x + 7]
-	     + collideCells[q*nX*y + q*x + 8];
+	const uint idx = indexOfLatticeCell(x, y);
+	return collideCells[idx + 0]
+	     + collideCells[idx + 1]
+	     + collideCells[idx + 2]
+	     + collideCells[idx + 3]
+	     + collideCells[idx + 4]
+	     + collideCells[idx + 5]
+	     + collideCells[idx + 6]
+	     + collideCells[idx + 7]
+	     + collideCells[idx + 8];
 }
 
 vec2 velocity(uint x, uint y, float d) {
@@ -60,27 +95,7 @@ vec2 velocity(uint x, uint y, float d) {
 	);
 }
 
-float w(int i, int j) {
-	if ( i == -1 ) {
-		if ( j != 0 ) {
-			return 1./36.;
-		} else {
-			return 1./9.;
-		}
-	} else if ( i == 0 ) {
-		if ( j != 0 ) {
-			return 1./9.;
-		} else {
-			return 4./9.;
-		}
-	} else {
-		if ( j != 0 ) {
-			return 1./36.;
-		} else {
-			return 1./9.;
-		}
-	}
-}
+/// Actual collide kernel
 
 void main() {
 	const uint x = gl_GlobalInvocationID.x;
