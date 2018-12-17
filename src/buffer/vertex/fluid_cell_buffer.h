@@ -1,12 +1,11 @@
 #pragma once
 
-#include <vector>
-
 #include <GL/glew.h>
 
 class FluidCellBuffer {
 private:
-	std::vector<GLfloat> _data;
+	const GLuint _nX;
+	const GLuint _nY;
 
 	GLuint _array;
 	GLuint _buffer;

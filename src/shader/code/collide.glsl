@@ -13,7 +13,19 @@ uniform uint nY;
 const uint  q     = 9;
 const float omega = 0.6;
 
-const float displayAmplifier = 1000.;
+const float displayAmplifier = 10.;
+
+float comp(int x, int y, vec2 v) {
+	return x*v.x + y*v.y;
+}
+
+float sq(float x) {
+	return x*x;
+}
+
+float norm(vec2 v) {
+	return sqrt(sq(v.x)+sq(v.y));
+}
 
 float get(uint x, uint y, int i, int j) {
 	return collideCells[q*nX*y + q*x + (i+1)*3 + j+1];
@@ -24,9 +36,9 @@ void set(uint x, uint y, int i, int j, float v) {
 }
 
 void setFluid(uint x, uint y, vec2 v, float d) {
-	fluidCells[3*nX*y + 3*x + 0] = float(x)-nX/2 + displayAmplifier*v.x;
-	fluidCells[3*nX*y + 3*x + 1] = float(y)-nY/2 + displayAmplifier*v.y;
-	fluidCells[3*nX*y + 3*x + 2] = d;
+	fluidCells[3*nX*y + 3*x + 0] = float(x)-nX/2;// + displayAmplifier*v.x;
+	fluidCells[3*nX*y + 3*x + 1] = float(y)-nY/2;// + displayAmplifier*v.y;
+	fluidCells[3*nX*y + 3*x + 2] = displayAmplifier * norm(v);
 }
 
 float density(uint x, uint y) {
@@ -68,18 +80,6 @@ float w(int i, int j) {
 			return 1./9.;
 		}
 	}
-}
-
-float comp(int x, int y, vec2 v) {
-	return x*v.x + y*v.y;
-}
-
-float sq(float x) {
-	return x*x;
-}
-
-float norm(vec2 v) {
-	return sqrt(sq(v.x)+sq(v.y));
 }
 
 void main() {

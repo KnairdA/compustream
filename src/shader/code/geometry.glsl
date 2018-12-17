@@ -17,7 +17,7 @@ vec4 project(vec4 v) {
 }
 
 void emitSquareAt(vec4 position) {
-	const float size = 0.2;
+	const float size = 0.5;
 
 	gl_Position = project(position + vec4(-size, -size, 0.0, 0.0));
 	EmitVertex();
@@ -30,10 +30,8 @@ void emitSquareAt(vec4 position) {
 }
 
 void main() {
-	if ( gl_in[0].gl_Position.xyz != vec3(0.,0.,0.) ) {
-		color = gs_in[0].color;
-		emitSquareAt(gl_in[0].gl_Position);
-		EndPrimitive();
-	}
+	color = gs_in[0].color;
+	emitSquareAt(gl_in[0].gl_Position);
+	EndPrimitive();
 }
 )";
