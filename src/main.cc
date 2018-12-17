@@ -26,6 +26,8 @@
 constexpr GLuint nX = 128;
 constexpr GLuint nY = 128;
 
+constexpr int lups = 25; // max lattice updates per second
+
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
 }
@@ -54,11 +56,8 @@ int renderWindow() {
 		return -1;
 	}
 
-	int window_width  = window.getWidth();
-	int window_height = window.getHeight();
-
 	float world_width  = 2*nX;
-	float world_height = getWorldHeight(window_width, window_height, world_width);
+	float world_height = getWorldHeight(window.getWidth(), window.getHeight(), world_width);
 
 	glm::mat4 MVP = getMVP(world_width,  world_height);
 
@@ -98,24 +97,18 @@ int renderWindow() {
 	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
 	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
 
-	window.render([&]() {
+	window.render([&](bool window_size_changed) {
 		if ( pause_key.wasClicked() ) {
 			update_lattice = !update_lattice;
 		}
 
-		if (    window.getWidth()  != window_width
-		     || window.getHeight() != window_height ) {
-			window_width  = window.getWidth();
-			window_height = window.getHeight();
-
-			glViewport(0, 0, window_width, window_height);
-
-			world_height = getWorldHeight(window_width, window_height, world_width);
+		if ( window_size_changed ) {
+			world_height = getWorldHeight(window.getWidth(), window.getHeight(), world_width);
 			MVP = getMVP(world_width, world_height);
 		}
 
 		if ( update_lattice ) {
-			if ( timer::millisecondsSince(last_frame) >= 1000/25 ) {
+			if ( timer::millisecondsSince(last_frame) >= 1000/lups ) {
 				if ( tick ) {
 					collide_shader->workOn(tick_buffers);
 					stream_shader->workOn(tick_buffers);

@@ -15,6 +15,8 @@ private:
 
 	GLFWwindow* const _handle;
 
+	bool updateSize();
+
 public:
 	Window(const std::string& title);
 	~Window();
@@ -46,9 +48,13 @@ void Window::render(F loop) {
 
 	while ( glfwGetKey(_handle, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 	        glfwWindowShouldClose(_handle)       == 0 ) {
-		glfwGetWindowSize(_handle, &_width, &_height);
+		const bool window_size_changed = updateSize();
 
-		loop();
+		if ( window_size_changed ) {
+			glViewport(0, 0, getWidth(), getHeight());
+		}
+
+		loop(window_size_changed);
 
 		glfwSwapBuffers(_handle);
 		glfwPollEvents();
