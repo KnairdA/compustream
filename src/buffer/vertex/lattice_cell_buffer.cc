@@ -7,7 +7,7 @@ LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY) {
 	glGenBuffers(1, &_buffer);
 
 	std::vector<GLfloat> data(9*nX*nY, GLfloat{1./9.});
-	const int insetX = 0.45*nX;
+	/*const int insetX = 0.45*nX;
 	const int insetY = 0.45*nY;
 
 	for (int x = insetX; x < nX-insetX; x++) {
@@ -18,7 +18,7 @@ LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY) {
 				}
 			}
 		}
-	}
+	}*/
 
 	glBindVertexArray(_array);
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);

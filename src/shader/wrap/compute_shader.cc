@@ -34,15 +34,21 @@ bool ComputeShader::isGood() const {
 	return _good;
 }
 
-GLuint ComputeShader::setUniform(const std::string& name, float x, float y) const {
+GLuint ComputeShader::setUniform(const std::string& name, int value) const {
 	GLuint id = util::getUniform(_id, name);
-	glUniform2f(id, x, y);
+	glUniform1i(id, value);
 	return id;
 }
 
-GLuint ComputeShader::setUniform(const std::string& name, unsigned int value) const {
+GLuint ComputeShader::setUniform(const std::string& name, GLuint value) const {
 	GLuint id = util::getUniform(_id, name);
 	glUniform1ui(id, value);
+	return id;
+}
+
+GLuint ComputeShader::setUniform(const std::string& name, float x, float y) const {
+	GLuint id = util::getUniform(_id, name);
+	glUniform2f(id, x, y);
 	return id;
 }
 

@@ -7,6 +7,10 @@ layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
 layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
 layout (std430, binding=3) buffer bufferFluid{   float fluidCells[]; };
 
+uniform int mouseClicked;
+uniform int mouseX;
+uniform int mouseY;
+
 /// LBM constants
 
 uniform uint nX;
@@ -103,7 +107,11 @@ void main() {
 		return;
 	}
 
-	const float d = density(x,y);
+	float d = density(x,y);
+	if ( mouseClicked == 1 && abs(x - mouseX) < 3 && abs(y - mouseY) < 3 ) {
+		d = 1.5;
+	}
+
 	const vec2  v = velocity(x,y,d);
 
 	setFluid(x,y,v,d);

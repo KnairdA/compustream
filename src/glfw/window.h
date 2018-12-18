@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tuple>
 #include <string>
 
 #include <GL/glew.h>
@@ -26,7 +27,9 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 
-	KeyWatcher getKeyWatcher(int key);
+	std::tuple<bool,int,int> getMouse() const;
+
+	KeyWatcher getKeyWatcher(int key) const;
 
 	template <class F>
 	void init(F f);

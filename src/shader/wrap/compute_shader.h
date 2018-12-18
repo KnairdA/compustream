@@ -26,8 +26,9 @@ public:
 
 	bool isGood() const;
 
+	GLuint setUniform(const std::string& name, int value) const;
+	GLuint setUniform(const std::string& name, GLuint value) const;
 	GLuint setUniform(const std::string& name, float x, float y) const;
-	GLuint setUniform(const std::string& name, unsigned int value) const;
 
 	void workOn(const std::vector<GLuint>& buffers) const;
 

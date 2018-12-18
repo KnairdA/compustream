@@ -37,6 +37,19 @@ int Window::getHeight() const {
 	return _height;
 }
 
-KeyWatcher Window::getKeyWatcher(int key) {
+std::tuple<bool,int,int> Window::getMouse() const {
+	const bool clicked = glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+	double x, y;
+	glfwGetCursorPos(_handle, &x, &y);
+
+	return std::make_tuple(
+		clicked,
+		x - int(getWidth()/2),
+		int(getHeight()/2 - y)
+	);
+}
+
+KeyWatcher Window::getKeyWatcher(int key) const {
 	return KeyWatcher(_handle, key);
 }

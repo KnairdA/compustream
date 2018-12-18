@@ -23,10 +23,10 @@
 
 #include "timer.h"
 
-constexpr GLuint nX = 128;
-constexpr GLuint nY = 128;
+constexpr GLuint nX = 256;
+constexpr GLuint nY = 256;
 
-constexpr int lups = 25; // max lattice updates per second
+constexpr int lups = 30; // max lattice updates per second
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -121,6 +121,16 @@ int renderWindow() {
 
 				{
 					auto guard = collide_shader->use();
+
+					const auto m = window.getMouse();
+					collide_shader->setUniform("mouseClicked", std::get<0>(m));
+					collide_shader->setUniform("mouseX", int(
+						float(std::get<1>(m)) / window.getWidth() * world_width + nX/2-1
+					));
+					collide_shader->setUniform("mouseY", int(
+						float(std::get<2>(m)) / window.getHeight() * world_height + nY/2
+					));
+
 					collide_shader->dispatch(nX, nY);
 				}
 				{
