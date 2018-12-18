@@ -29,6 +29,10 @@ void main() {
 	const uint x = gl_GlobalInvocationID.x;
 	const uint y = gl_GlobalInvocationID.y;
 
+	if ( !(x < nX && y < nY) ) {
+		return;
+	}
+
 	if ( x != 0 && x != nX-1 && y != 0 && y != nY-1 ) {
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {

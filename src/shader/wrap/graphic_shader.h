@@ -25,6 +25,7 @@ public:
 	~GraphicShader();
 
 	GLuint setUniform(const std::string& name, int value) const;
+	GLuint setUniform(const std::string& name, GLuint value) const;
 	GLuint setUniform(const std::string& name, const std::vector<GLuint>& v) const;
 	GLuint setUniform(const std::string& name, glm::mat4& M) const;
 };

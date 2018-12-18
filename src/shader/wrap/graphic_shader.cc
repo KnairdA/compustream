@@ -42,6 +42,12 @@ GLuint GraphicShader::setUniform(const std::string& name, int value) const {
 	return id;
 }
 
+GLuint GraphicShader::setUniform(const std::string& name, GLuint value) const {
+	GLuint id = util::getUniform(_id, name);
+	glUniform1ui(id, value);
+	return id;
+}
+
 GLuint GraphicShader::setUniform(const std::string& name, const std::vector<GLuint>& v) const {
 	GLuint id = util::getUniform(_id, name);
 	glUniform1iv(id, v.size(), reinterpret_cast<const GLint*>(v.data()));

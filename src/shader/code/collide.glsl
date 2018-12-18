@@ -7,8 +7,6 @@ layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
 layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
 layout (std430, binding=3) buffer bufferFluid{   float fluidCells[]; };
 
-const float displayAmplifier = 10.;
-
 /// LBM constants
 
 uniform uint nX;
@@ -26,8 +24,8 @@ const float omega = 1/tau;
 
 /// Vector utilities
 
-float comp(int x, int y, vec2 v) {
-	return x*v.x + y*v.y;
+float comp(int i, int j, vec2 v) {
+	return i*v.x + j*v.y;
 }
 
 float sq(float x) {
@@ -68,9 +66,9 @@ void set(uint x, uint y, int i, int j, float v) {
 
 void setFluid(uint x, uint y, vec2 v, float d) {
 	const uint idx = indexOfFluidVertex(x, y);
-	fluidCells[idx + 0] = float(x) - nX/2;
-	fluidCells[idx + 1] = float(y) - nY/2;
-	fluidCells[idx + 2] = displayAmplifier * norm(v);
+	fluidCells[idx + 0] = v.x;
+	fluidCells[idx + 1] = v.y;
+	fluidCells[idx + 2] = norm(v);
 }
 
 /// Moments
@@ -101,6 +99,10 @@ void main() {
 	const uint x = gl_GlobalInvocationID.x;
 	const uint y = gl_GlobalInvocationID.y;
 
+	if ( !(x < nX && y < nY) ) {
+		return;
+	}
+
 	const float d = density(x,y);
 	const vec2  v = velocity(x,y,d);
 
@@ -112,6 +114,5 @@ void main() {
 			set(x,y,i,j, get(x,y,i,j) + omega * (eq - get(x,y,i,j)));
 		}
 	}
-
 }
 )";

@@ -136,6 +136,8 @@ int renderWindow() {
 			auto guard = scene_shader->use();
 
 			scene_shader->setUniform("MVP", MVP);
+			scene_shader->setUniform("nX", nX);
+			scene_shader->setUniform("nY", nY);
 
 			glClear(GL_COLOR_BUFFER_BIT);
 			fluid->draw();
