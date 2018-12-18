@@ -68,7 +68,7 @@ void setFluid(uint x, uint y, vec2 v, float d) {
 	const uint idx = indexOfFluidVertex(x, y);
 	fluidCells[idx + 0] = v.x;
 	fluidCells[idx + 1] = v.y;
-	fluidCells[idx + 2] = norm(v);
+	fluidCells[idx + 2] = d;
 }
 
 /// Moments

@@ -10,10 +10,18 @@ out VS_OUT {
 uniform uint nX;
 uniform uint nY;
 
-const float displayAmplifier = 10.0;
+const float displayAmplifier = 5.0;
 
 float unit(float x) {
 	return 1.0/(1.0+exp(-x));
+}
+
+float sq(float x) {
+	return x*x;
+}
+
+float norm(vec2 v) {
+	return sqrt(sq(v.x)+sq(v.y));
 }
 
 vec3 getColor(float x) {
@@ -39,6 +47,6 @@ void main() {
 		1.
 	);
 
-	vs_out.color = getColor(unit(displayAmplifier * VertexPosition.z));
+	vs_out.color = getColor(unit(displayAmplifier * VertexPosition.z * norm(VertexPosition.xy)));
 }
 )";
