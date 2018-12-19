@@ -7,9 +7,10 @@ layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
 layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
 layout (std430, binding=3) buffer bufferFluid{   float fluidCells[]; };
 
-uniform int mouseClicked;
-uniform int mouseX;
-uniform int mouseY;
+/// external influence
+
+uniform int  mouseState;
+uniform vec2 mousePos;
 
 /// LBM constants
 
@@ -97,6 +98,16 @@ vec2 velocity(uint x, uint y, float d) {
 	);
 }
 
+/// Determine external influence
+
+float getExternalPressureInflux(uint x, uint y) {
+	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 4 ) {
+		return 1.5;
+	} else {
+		return 0.0;
+	}
+}
+
 /// Actual collide kernel
 
 void main() {
@@ -107,11 +118,7 @@ void main() {
 		return;
 	}
 
-	float d = density(x,y);
-	if ( mouseClicked == 1 && abs(x - mouseX) < 3 && abs(y - mouseY) < 3 ) {
-		d = 1.5;
-	}
-
+	const float d = max(getExternalPressureInflux(x,y), density(x,y));
 	const vec2  v = velocity(x,y,d);
 
 	setFluid(x,y,v,d);

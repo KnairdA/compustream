@@ -23,10 +23,10 @@
 
 #include "timer.h"
 
-constexpr GLuint nX = 256;
-constexpr GLuint nY = 256;
+constexpr GLuint nX = 512;
+constexpr GLuint nY = 512;
 
-constexpr int lups = 30; // max lattice updates per second
+constexpr int lups = 50; // max lattice updates per second
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -56,7 +56,7 @@ int renderWindow() {
 		return -1;
 	}
 
-	float world_width  = 2*nX;
+	float world_width  = 1.5*nX;
 	float world_height = getWorldHeight(window.getWidth(), window.getHeight(), world_width);
 
 	glm::mat4 MVP = getMVP(world_width,  world_height);
@@ -123,13 +123,11 @@ int renderWindow() {
 					auto guard = collide_shader->use();
 
 					const auto m = window.getMouse();
-					collide_shader->setUniform("mouseClicked", std::get<0>(m));
-					collide_shader->setUniform("mouseX", int(
-						float(std::get<1>(m)) / window.getWidth() * world_width + nX/2-1
-					));
-					collide_shader->setUniform("mouseY", int(
-						float(std::get<2>(m)) / window.getHeight() * world_height + nY/2
-					));
+					const float latticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
+					const float latticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
+
+					collide_shader->setUniform("mouseState", std::get<0>(m));
+					collide_shader->setUniform("mousePos", latticeMouseX, latticeMouseY);
 
 					collide_shader->dispatch(nX, nY);
 				}
