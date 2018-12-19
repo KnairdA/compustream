@@ -23,8 +23,8 @@
 
 #include "timer.h"
 
-constexpr GLuint nX = 512;
-constexpr GLuint nY = 512;
+constexpr GLuint nX = 256;
+constexpr GLuint nY = 256;
 
 constexpr int lups = 50; // max lattice updates per second
 

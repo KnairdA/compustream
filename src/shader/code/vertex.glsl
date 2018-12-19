@@ -24,17 +24,12 @@ float norm(vec2 v) {
 	return sqrt(sq(v.x)+sq(v.y));
 }
 
-vec3 getColor(float x) {
-	return x*vec3(1.0,0.0,0.0) + (1-x)*vec3(-0.5,0.0,1.0);
-}
-
 vec2 fluidVertexAtIndex(uint i) {
 	const float y = floor(float(i) / float(nX));
 	return vec2(
 		i - nX*y,
 		y
 	);
-
 }
 
 void main() {
@@ -47,6 +42,10 @@ void main() {
 		1.
 	);
 
-	vs_out.color = getColor(unit(displayAmplifier * VertexPosition.z * norm(VertexPosition.xy)));
+	vs_out.color = mix(
+		vec3(-0.5, 0.0, 1.0),
+		vec3( 1.0, 0.0, 0.0),
+		displayAmplifier * VertexPosition.z * norm(VertexPosition.xy)
+	);
 }
 )";
