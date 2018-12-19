@@ -80,15 +80,11 @@ void setFluid(uint x, uint y, vec2 v, float d) {
 
 float density(uint x, uint y) {
 	const uint idx = indexOfLatticeCell(x, y);
-	return collideCells[idx + 0]
-	     + collideCells[idx + 1]
-	     + collideCells[idx + 2]
-	     + collideCells[idx + 3]
-	     + collideCells[idx + 4]
-	     + collideCells[idx + 5]
-	     + collideCells[idx + 6]
-	     + collideCells[idx + 7]
-	     + collideCells[idx + 8];
+	float d = 0.;
+	for ( int i = 0; i < q; ++i ) {
+		d += collideCells[idx + i];
+	}
+	return d;
 }
 
 vec2 velocity(uint x, uint y, float d) {
