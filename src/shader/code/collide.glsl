@@ -94,6 +94,12 @@ vec2 velocity(uint x, uint y, float d) {
 	);
 }
 
+/// Equilibrium distribution
+
+float equilibrium(float d, vec2 v, int i, int j) {
+	return w(i,j) * d * (1 + 3*comp(i,j,v) + 4.5*sq(comp(i,j,v)) - 1.5*sq(norm(v)));
+}
+
 /// Determine external influence
 
 float getExternalPressureInflux(uint x, uint y) {
@@ -121,8 +127,7 @@ void main() {
 
 	for ( int i = -1; i <= 1; ++i ) {
 		for ( int j = -1; j <= 1; ++j ) {
-			const float eq = w(i,j) * d * (1 + 3*comp(i,j,v) + 4.5*sq(comp(i,j,v)) - 1.5*sq(norm(v)));
-			set(x,y,i,j, get(x,y,i,j) + omega * (eq - get(x,y,i,j)));
+			set(x,y,i,j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
 		}
 	}
 }
