@@ -44,7 +44,7 @@ float norm(vec2 v) {
 /// Array indexing
 
 uint indexOfDirection(int i, int j) {
-	return 3*(j+1) + (i+1);
+	return 3*(i+1) + (j+1);
 }
 
 uint indexOfLatticeCell(uint x, uint y) {

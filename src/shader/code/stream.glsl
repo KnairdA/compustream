@@ -13,14 +13,24 @@ uniform uint nY;
 
 const uint q = 9;
 
+// Array indexing
+
+uint indexOfDirection(int i, int j) {
+	return 3*(i+1) + (j+1);
+}
+
+uint indexOfLatticeCell(uint x, uint y) {
+	return q*nX*y + q*x;
+}
+
 /// Data access
 
 float get(uint x, uint y, int i, int j) {
-	return collideCells[q*nX*y + q*x + (i+1)*3 + j+1];
+	return collideCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)];
 }
 
 void set(uint x, uint y, int i, int j, float v) {
-	streamCells[q*nX*y + q*x + (i+1)*3 + j+1] = v;
+	streamCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
 }
 
 /// Actual stream kernel
