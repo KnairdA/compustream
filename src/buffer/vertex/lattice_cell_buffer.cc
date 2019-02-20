@@ -2,23 +2,29 @@
 
 #include <vector>
 
+std::vector<GLfloat> makeLattice(GLuint nX, GLuint nY) {
+	std::vector<GLfloat> data(9*nX*nY, GLfloat{});
+
+	const GLfloat equilibrium[9] {
+		1./36., 1./9., 1./36.,
+		1./9. , 4./9., 1./9. ,
+		1./36 , 1./9., 1./36.
+	};
+
+	for (int i = 0; i < nX*nY; ++i) {
+		for (int q = 0; q < 9; ++q) {
+			data[9*i+q] = equilibrium[q];
+		}
+	}
+
+	return data;
+}
+
 LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY) {
 	glGenVertexArrays(1, &_array);
 	glGenBuffers(1, &_buffer);
 
-	std::vector<GLfloat> data(9*nX*nY, GLfloat{1./9.});
-	/*const int insetX = 0.45*nX;
-	const int insetY = 0.45*nY;
-
-	for (int x = insetX; x < nX-insetX; x++) {
-		for (int y = insetY; y < nY-insetY; y++) {
-			for ( int i = -1; i <= 1; ++i ) {
-				for ( int j = -1; j <= 1; ++j ) {
-					data[9*nX*y + 9*x + (i+1)*3 + j+1] = 0.5;
-				}
-			}
-		}
-	}*/
+	const std::vector<GLfloat> data = makeLattice(nX, nY);
 
 	glBindVertexArray(_array);
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
