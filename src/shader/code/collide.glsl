@@ -110,6 +110,16 @@ float getExternalPressureInflux(uint x, uint y) {
 	}
 }
 
+/// Domain description
+
+bool isEndOfWorld(uint x, uint y) {
+	return x == 0 || x == nX-1 || y == 0 || y == nY-1;
+}
+
+bool isOuterWall(uint x, uint y) {
+	return x == 1 || x == nX-2 || y == 1 || y == nY-2;
+}
+
 /// Actual collide kernel
 
 void main() {
@@ -117,6 +127,14 @@ void main() {
 	const uint y = gl_GlobalInvocationID.y;
 
 	if ( !(x < nX && y < nY) ) {
+		return;
+	}
+
+	if ( isEndOfWorld(x,y) ) {
+		return;
+	}
+
+	if ( isOuterWall(x,y) ) {
 		return;
 	}
 

@@ -33,6 +33,26 @@ void set(uint x, uint y, int i, int j, float v) {
 	streamCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
 }
 
+/// Domain description
+
+bool isEndOfWorld(uint x, uint y) {
+	return x == 0 || x == nX-1 || y == 0 || y == nY-1;
+}
+
+bool isOuterWall(uint x, uint y) {
+	return x == 1 || x == nX-2 || y == 1 || y == nY-2;
+}
+
+/// Boundary conditions
+
+void bounceBack(uint x, uint y) {
+	for ( int i = -1; i <= 1; ++i ) {
+		for ( int j = -1; j <= 1; ++j ) {
+			set(x,y,i,j, get(x,y,(-1)*i,(-1)*j));
+		}
+	}
+}
+
 /// Actual stream kernel
 
 void main() {
@@ -43,22 +63,17 @@ void main() {
 		return;
 	}
 
-	if ( x != 0 && x != nX-1 && y != 0 && y != nY-1 ) {
-		for ( int i = -1; i <= 1; ++i ) {
-			for ( int j = -1; j <= 1; ++j ) {
-				set(x+i,y+j,i,j, get(x,y,i,j));
-			}
-		}
-	} else {
-		// rudimentary bounce back boundary handling
-		for ( int i = -1; i <= 1; ++i ) {
-			for ( int j = -1; j <= 1; ++j ) {
-				if ( (x > 0 || i >= 0) && x+i <= nX-1 && (y > 0 || j >= 0) && y+j <= nY-1 ) {
-					set(x+i,y+j,i,j, get(x,y,i,j));
-				} else {
-					set(x,y,i*(-1),j*(-1), get(x,y,i,j));
-				}
-			}
+	if ( isEndOfWorld(x,y) ) {
+		return;
+	}
+
+	if ( isOuterWall(x,y) ) {
+		bounceBack(x,y);
+	}
+
+	for ( int i = -1; i <= 1; ++i ) {
+		for ( int j = -1; j <= 1; ++j ) {
+			set(x+i,y+j,i,j, get(x,y,i,j));
 		}
 	}
 }
