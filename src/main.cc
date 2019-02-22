@@ -10,6 +10,7 @@
 
 #include "buffer/vertex/fluid_cell_buffer.h"
 #include "buffer/vertex/lattice_cell_buffer.h"
+#include "buffer/vertex/material_buffer.h"
 
 #include "shader/wrap/graphic_shader.h"
 #include "shader/wrap/compute_shader.h"
@@ -66,6 +67,7 @@ int renderWindow() {
 	std::unique_ptr<LatticeCellBuffer> lattice_a;
 	std::unique_ptr<LatticeCellBuffer> lattice_b;
 	std::unique_ptr<FluidCellBuffer>   fluid;
+	std::unique_ptr<MaterialBuffer>    geometry;
 
 	std::unique_ptr<ComputeShader> collide_shader;
 	std::unique_ptr<ComputeShader> stream_shader;
@@ -77,6 +79,7 @@ int renderWindow() {
 		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
 		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);
 		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY);
+		geometry  = std::make_unique<   MaterialBuffer>(nX, nY);
 
 		collide_shader = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
 		stream_shader  = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
@@ -94,8 +97,8 @@ int renderWindow() {
 
 	auto pause_key = window.getKeyWatcher(GLFW_KEY_SPACE);
 
-	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
-	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
+	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer(), geometry->getBuffer() };
+	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer(), geometry->getBuffer() };
 
 	window.render([&](bool window_size_changed) {
 		if ( pause_key.wasClicked() ) {

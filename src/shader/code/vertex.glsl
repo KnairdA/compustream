@@ -10,7 +10,7 @@ out VS_OUT {
 uniform uint nX;
 uniform uint nY;
 
-const float displayAmplifier = 5.0;
+const float displayAmplifier = 50.0;
 
 float unit(float x) {
 	return 1.0/(1.0+exp(-x));
@@ -42,10 +42,14 @@ void main() {
 		1.
 	);
 
-	vs_out.color = mix(
-		vec3(-0.5, 0.0, 1.0),
-		vec3( 1.0, 0.0, 0.0),
-		displayAmplifier * VertexPosition.z * norm(VertexPosition.xy)
-	);
+	if ( VertexPosition.z < -1.0 ) {
+		vs_out.color = vec3(0.0, 0.0, 0.0);
+	} else {
+		vs_out.color = mix(
+			vec3(-0.5, 0.0, 1.0),
+			vec3( 1.0, 0.0, 0.0),
+			displayAmplifier * VertexPosition.z * norm(VertexPosition.xy)
+		);
+	}
 }
 )";

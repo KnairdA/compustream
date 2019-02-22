@@ -3,9 +3,10 @@ static const std::string COLLIDE_SHADER_CODE = R"(
 
 layout (local_size_x = 1, local_size_y = 1) in;
 
-layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
-layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
-layout (std430, binding=3) buffer bufferFluid{   float fluidCells[]; };
+layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
+layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
+layout (std430, binding=3) buffer bufferFluid    { float fluidCells[];    };
+layout (std430, binding=4) buffer bufferGeometry { int   materialCells[]; };
 
 /// external influence
 
@@ -76,6 +77,22 @@ void setFluid(uint x, uint y, vec2 v, float d) {
 	fluidCells[idx + 2] = d;
 }
 
+int getMaterial(uint x, uint y) {
+	return materialCells[nX*y + x];
+}
+
+void setMaterial(uint x, uint y, int m) {
+	materialCells[nX*y + x] = m;
+}
+
+void disableFluid(uint x, uint y) {
+	const uint idx = indexOfFluidVertex(x, y);
+	fluidCells[idx + 0] = 0.0;
+	fluidCells[idx + 1] = 0.0;
+	fluidCells[idx + 2] = -2.0;
+}
+
+
 /// Moments
 
 float density(uint x, uint y) {
@@ -103,21 +120,19 @@ float equilibrium(float d, vec2 v, int i, int j) {
 /// Determine external influence
 
 float getExternalPressureInflux(uint x, uint y) {
-	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 4 ) {
+	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 2 ) {
 		return 1.5;
 	} else {
 		return 0.0;
 	}
 }
 
-/// Domain description
-
-bool isEndOfWorld(uint x, uint y) {
-	return x == 0 || x == nX-1 || y == 0 || y == nY-1;
-}
-
-bool isOuterWall(uint x, uint y) {
-	return x == 1 || x == nX-2 || y == 1 || y == nY-2;
+bool getExternalWallRequest(uint x, uint y) {
+	if ( mouseState == 2 && norm(vec2(x,y) - mousePos) < 4 ) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 /// Actual collide kernel
@@ -130,22 +145,38 @@ void main() {
 		return;
 	}
 
-	if ( isEndOfWorld(x,y) ) {
-		return;
+	if ( getExternalWallRequest(x,y) ) {
+		setMaterial(x,y,2);
+		disableFluid(x,y);
 	}
 
-	if ( isOuterWall(x,y) ) {
-		return;
+	const int material = getMaterial(x,y);
+
+	if ( material == 2 ) {
+		int wallNeighbors = 0;
+		for ( int i = -1; i <= 1; ++i ) {
+			for ( int j = -1; j <= 1; ++j ) {
+				const int material = getMaterial(x+i,y+j);
+				if ( material  == 0 || material == 2 ) {
+					++wallNeighbors;
+				}
+			}
+		}
+		if ( wallNeighbors == 9 ) {
+			setMaterial(x,y,0);
+		}
 	}
 
-	const float d = max(getExternalPressureInflux(x,y), density(x,y));
-	const vec2  v = velocity(x,y,d);
+	if ( material == 1 ) { // fluid
+		const float d = max(getExternalPressureInflux(x,y), density(x,y));
+		const vec2  v = velocity(x,y,d);
 
-	setFluid(x,y,v,d);
+		setFluid(x,y,v,d);
 
-	for ( int i = -1; i <= 1; ++i ) {
-		for ( int j = -1; j <= 1; ++j ) {
-			set(x,y,i,j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+		for ( int i = -1; i <= 1; ++i ) {
+			for ( int j = -1; j <= 1; ++j ) {
+				set(x,y,i,j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+			}
 		}
 	}
 }

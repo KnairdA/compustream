@@ -27,7 +27,7 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 
-	std::tuple<bool,int,int> getMouse() const;
+	std::tuple<int,int,int> getMouse() const;
 
 	KeyWatcher getKeyWatcher(int key) const;
 

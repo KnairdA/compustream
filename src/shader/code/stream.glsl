@@ -3,8 +3,9 @@ static const std::string STREAM_SHADER_CODE = R"(
 
 layout (local_size_x = 1, local_size_y = 1) in;
 
-layout (std430, binding=1) buffer bufferCollide{ float collideCells[]; };
-layout (std430, binding=2) buffer bufferStream{  float streamCells[]; };
+layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
+layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
+layout (std430, binding=4) buffer bufferGeometry { int   materialCells[]; };
 
 /// LBM constants
 
@@ -31,6 +32,10 @@ float get(uint x, uint y, int i, int j) {
 
 void set(uint x, uint y, int i, int j, float v) {
 	streamCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
+}
+
+int getMaterial(uint x, uint y) {
+	return materialCells[nX*y + x];
 }
 
 /// Domain description
@@ -63,11 +68,13 @@ void main() {
 		return;
 	}
 
-	if ( isEndOfWorld(x,y) ) {
+	const int material = getMaterial(x,y);
+
+	if ( material == 0 ) {
 		return;
 	}
 
-	if ( isOuterWall(x,y) ) {
+	if ( material == 2 ) {
 		bounceBack(x,y);
 	}
 

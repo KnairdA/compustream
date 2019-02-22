@@ -37,14 +37,19 @@ int Window::getHeight() const {
 	return _height;
 }
 
-std::tuple<bool,int,int> Window::getMouse() const {
-	const bool clicked = glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+std::tuple<int,int,int> Window::getMouse() const {
+	int state = 0;
+	if ( glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ) {
+		state = 1;
+	} else if ( glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ) {
+		state = 2;
+	}
 
 	double x, y;
 	glfwGetCursorPos(_handle, &x, &y);
 
 	return std::make_tuple(
-		clicked,
+		state,
 		x - int(getWidth()/2),
 		int(getHeight()/2 - y)
 	);
