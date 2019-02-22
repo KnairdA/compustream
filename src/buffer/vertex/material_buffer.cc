@@ -2,7 +2,7 @@
 
 #include <vector>
 
-MaterialBuffer::MaterialBuffer(GLuint nX, GLuint nY):
+MaterialBuffer::MaterialBuffer(GLuint nX, GLuint nY, std::function<int(int,int)>&& geometry):
 	_nX(nX), _nY(nY) {
 	glGenVertexArrays(1, &_array);
 	glGenBuffers(1, &_buffer);
@@ -13,21 +13,9 @@ MaterialBuffer::MaterialBuffer(GLuint nX, GLuint nY):
 	std::vector<GLint> data(nX*nY, GLint{1});
 
 	for ( int x = 0; x < nX; ++x ) {
-		data[     0*nX + x] = 0;
-		data[(nY-1)*nX + x] = 0;
-	}
-	for ( int y = 0; y < nY; ++y ) {
-		data[y*nX +    0] = 0;
-		data[y*nX + nX-1] = 0;
-	}
-
-	for ( int x = 1; x < nX-1; ++x ) {
-		data[     1*nX + x] = 2;
-		data[(nY-2)*nX + x] = 2;
-	}
-	for ( int y = 1; y < nY-1; ++y ) {
-		data[y*nX +    1] = 2;
-		data[y*nX + nX-2] = 2;
+		for ( int y = 0; y < nY; ++y ) {
+			data[y*nX + x] = geometry(x,y);
+		}
 	}
 
 	glBufferData(

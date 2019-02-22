@@ -38,21 +38,20 @@ int Window::getHeight() const {
 }
 
 std::tuple<int,int,int> Window::getMouse() const {
-	int state = 0;
-	if ( glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ) {
-		state = 1;
-	} else if ( glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ) {
-		state = 2;
-	}
-
 	double x, y;
 	glfwGetCursorPos(_handle, &x, &y);
+	x = int(x -  getWidth()/2);
+	y = int(getHeight()/2 - y);
 
-	return std::make_tuple(
-		state,
-		x - int(getWidth()/2),
-		int(getHeight()/2 - y)
-	);
+	if ( glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ) {
+		return std::make_tuple(1, x, y);
+	}
+
+	if ( glfwGetMouseButton(_handle, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ) {
+		return std::make_tuple(2, x, y);
+	}
+
+	return std::make_tuple(0, x, y);
 }
 
 KeyWatcher Window::getKeyWatcher(int key) const {

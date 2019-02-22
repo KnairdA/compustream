@@ -117,18 +117,37 @@ float equilibrium(float d, vec2 v, int i, int j) {
 	return w(i,j) * d * (1 + 3*comp(i,j,v) + 4.5*sq(comp(i,j,v)) - 1.5*sq(norm(v)));
 }
 
+/// Disable wall interior
+
+void disableWallInterior(uint x, uint y) {
+	int wallNeighbors = 0;
+
+	for ( int i = -1; i <= 1; ++i ) {
+		for ( int j = -1; j <= 1; ++j ) {
+			const int material = getMaterial(x+i,y+j);
+			if ( material  == 0 || material == 2 ) {
+				++wallNeighbors;
+			}
+		}
+	}
+
+	if ( wallNeighbors == 9 ) {
+		setMaterial(x,y,0);
+	}
+}
+
 /// Determine external influence
 
 float getExternalPressureInflux(uint x, uint y) {
-	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 2 ) {
+	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 3 ) {
 		return 1.5;
 	} else {
 		return 0.0;
 	}
 }
 
-bool getExternalWallRequest(uint x, uint y) {
-	if ( mouseState == 2 && norm(vec2(x,y) - mousePos) < 4 ) {
+bool isWallRequestedAt(uint x, uint y) {
+	if ( mouseState == 2 && norm(vec2(x,y) - mousePos) < 3 ) {
 		return true;
 	} else {
 		return false;
@@ -145,26 +164,15 @@ void main() {
 		return;
 	}
 
-	if ( getExternalWallRequest(x,y) ) {
+	if ( isWallRequestedAt(x,y) ) {
 		setMaterial(x,y,2);
 		disableFluid(x,y);
 	}
 
 	const int material = getMaterial(x,y);
 
-	if ( material == 2 ) {
-		int wallNeighbors = 0;
-		for ( int i = -1; i <= 1; ++i ) {
-			for ( int j = -1; j <= 1; ++j ) {
-				const int material = getMaterial(x+i,y+j);
-				if ( material  == 0 || material == 2 ) {
-					++wallNeighbors;
-				}
-			}
-		}
-		if ( wallNeighbors == 9 ) {
-			setMaterial(x,y,0);
-		}
+	if ( material == 2 ) { // wall
+		disableWallInterior(x,y);
 	}
 
 	if ( material == 1 ) { // fluid

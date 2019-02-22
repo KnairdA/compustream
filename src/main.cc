@@ -79,7 +79,15 @@ int renderWindow() {
 		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
 		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);
 		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY);
-		geometry  = std::make_unique<   MaterialBuffer>(nX, nY);
+		geometry  = std::make_unique<   MaterialBuffer>(nX, nY, [](int x, int y) -> int {
+			if ( x == 0 || y == 0 || x == nX-1 || y == nY-1 ) {
+				return 0; // disable end of world
+			}
+			if ( (x == 1 || x == nX-2) && (y == 1 || y == nY-2) ) {
+				return 2; // bounce back outer walls
+			}
+			return 1; // everything shall be fluid
+		});
 
 		collide_shader = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
 		stream_shader  = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);

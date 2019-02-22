@@ -10,7 +10,7 @@ out VS_OUT {
 uniform uint nX;
 uniform uint nY;
 
-const float displayAmplifier = 50.0;
+const float displayAmplifier = 10.0;
 
 float unit(float x) {
 	return 1.0/(1.0+exp(-x));
