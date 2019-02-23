@@ -2,6 +2,8 @@
 
 #include <GL/glew.h>
 
+#include <functional>
+
 class FluidCellBuffer {
 private:
 	const GLuint _nX;
@@ -11,7 +13,7 @@ private:
 	GLuint _buffer;
 
 public:
-	FluidCellBuffer(GLuint nX, GLuint nY);
+	FluidCellBuffer(GLuint nX, GLuint nY, std::function<int(int,int)>&& geometry);
 	~FluidCellBuffer();
 
 	GLuint getBuffer() const;

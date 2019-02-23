@@ -17,7 +17,6 @@ add_executable(
 		src/shader/wrap/graphic_shader.cc
 		src/buffer/vertex/lattice_cell_buffer.cc
 		src/buffer/vertex/fluid_cell_buffer.cc
-		src/buffer/vertex/material_buffer.cc
 )
 
 target_link_libraries(

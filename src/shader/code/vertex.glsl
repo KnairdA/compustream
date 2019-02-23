@@ -32,6 +32,14 @@ vec2 fluidVertexAtIndex(uint i) {
 	);
 }
 
+bool isInactive(int material) {
+	return material == 0;
+}
+
+bool isWallFrontier(int material) {
+	return material == 2 || material == 3;
+}
+
 void main() {
 	const vec2 idx = fluidVertexAtIndex(gl_VertexID);
 
@@ -42,13 +50,17 @@ void main() {
 		1.
 	);
 
-	if ( VertexPosition.z < -1.0 ) {
+	const int material = int(round(VertexPosition.z));
+
+	if ( isInactive(material) ) {
+		vs_out.color = vec3(0.5, 0.5, 0.5);
+	} else if ( isWallFrontier(material) ) {
 		vs_out.color = vec3(0.0, 0.0, 0.0);
 	} else {
 		vs_out.color = mix(
 			vec3(-0.5, 0.0, 1.0),
 			vec3( 1.0, 0.0, 0.0),
-			displayAmplifier * VertexPosition.z * norm(VertexPosition.xy)
+			displayAmplifier * norm(VertexPosition.xy)
 		);
 	}
 }

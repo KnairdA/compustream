@@ -6,7 +6,6 @@ layout (local_size_x = 1, local_size_y = 1) in;
 layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
 layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
 layout (std430, binding=3) buffer bufferFluid    { float fluidCells[];    };
-layout (std430, binding=4) buffer bufferGeometry { int   materialCells[]; };
 
 /// external influence
 
@@ -70,28 +69,21 @@ void set(uint x, uint y, int i, int j, float v) {
 	collideCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
 }
 
-void setFluid(uint x, uint y, vec2 v, float d) {
+void setFluid(uint x, uint y, vec2 v) {
 	const uint idx = indexOfFluidVertex(x, y);
 	fluidCells[idx + 0] = v.x;
 	fluidCells[idx + 1] = v.y;
-	fluidCells[idx + 2] = d;
 }
 
 int getMaterial(uint x, uint y) {
-	return materialCells[nX*y + x];
+	const uint idx = indexOfFluidVertex(x, y);
+	return int(fluidCells[idx + 2]);
 }
 
 void setMaterial(uint x, uint y, int m) {
-	materialCells[nX*y + x] = m;
-}
-
-void disableFluid(uint x, uint y) {
 	const uint idx = indexOfFluidVertex(x, y);
-	fluidCells[idx + 0] = 0.0;
-	fluidCells[idx + 1] = 0.0;
-	fluidCells[idx + 2] = -2.0;
+	fluidCells[idx + 2] = m;
 }
-
 
 /// Moments
 
@@ -125,7 +117,7 @@ void disableWallInterior(uint x, uint y) {
 	for ( int i = -1; i <= 1; ++i ) {
 		for ( int j = -1; j <= 1; ++j ) {
 			const int material = getMaterial(x+i,y+j);
-			if ( material  == 0 || material == 2 ) {
+			if ( material  == 0 || material == 2 || material == 3 ) {
 				++wallNeighbors;
 			}
 		}
@@ -139,7 +131,7 @@ void disableWallInterior(uint x, uint y) {
 /// Determine external influence
 
 float getExternalPressureInflux(uint x, uint y) {
-	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 3 ) {
+	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 2 ) {
 		return 1.5;
 	} else {
 		return 0.0;
@@ -147,7 +139,7 @@ float getExternalPressureInflux(uint x, uint y) {
 }
 
 bool isWallRequestedAt(uint x, uint y) {
-	if ( mouseState == 2 && norm(vec2(x,y) - mousePos) < 3 ) {
+	if ( mouseState == 2 && norm(vec2(x,y) - mousePos) < 2 ) {
 		return true;
 	} else {
 		return false;
@@ -164,14 +156,14 @@ void main() {
 		return;
 	}
 
-	if ( isWallRequestedAt(x,y) ) {
-		setMaterial(x,y,2);
-		disableFluid(x,y);
-	}
-
 	const int material = getMaterial(x,y);
 
-	if ( material == 2 ) { // wall
+	if ( isWallRequestedAt(x,y) && material == 1 ) {
+		setMaterial(x,y,3);
+		return;
+	}
+
+	if ( material == 3 ) { // manually added wall
 		disableWallInterior(x,y);
 	}
 
@@ -179,7 +171,7 @@ void main() {
 		const float d = max(getExternalPressureInflux(x,y), density(x,y));
 		const vec2  v = velocity(x,y,d);
 
-		setFluid(x,y,v,d);
+		setFluid(x,y,v);
 
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {

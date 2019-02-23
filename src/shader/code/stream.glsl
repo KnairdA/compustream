@@ -5,7 +5,7 @@ layout (local_size_x = 1, local_size_y = 1) in;
 
 layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
 layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
-layout (std430, binding=4) buffer bufferGeometry { int   materialCells[]; };
+layout (std430, binding=3) buffer bufferFluid    { float fluidCells[];    };
 
 /// LBM constants
 
@@ -24,6 +24,10 @@ uint indexOfLatticeCell(uint x, uint y) {
 	return q*nX*y + q*x;
 }
 
+uint indexOfFluidVertex(uint x, uint y) {
+	return 3*nX*y + 3*x;
+}
+
 /// Data access
 
 float get(uint x, uint y, int i, int j) {
@@ -35,17 +39,8 @@ void set(uint x, uint y, int i, int j, float v) {
 }
 
 int getMaterial(uint x, uint y) {
-	return materialCells[nX*y + x];
-}
-
-/// Domain description
-
-bool isEndOfWorld(uint x, uint y) {
-	return x == 0 || x == nX-1 || y == 0 || y == nY-1;
-}
-
-bool isOuterWall(uint x, uint y) {
-	return x == 1 || x == nX-2 || y == 1 || y == nY-2;
+	const uint idx = indexOfFluidVertex(x, y);
+	return int(fluidCells[idx + 2]);
 }
 
 /// Boundary conditions
@@ -74,7 +69,7 @@ void main() {
 		return;
 	}
 
-	if ( material == 2 ) {
+	if ( material == 2 || material == 3 ) {
 		bounceBack(x,y);
 	}
 
