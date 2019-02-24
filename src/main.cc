@@ -106,6 +106,10 @@ int renderWindow() {
 	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
 	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
 
+	int prevLatticeMouseState = 0;
+	int prevLatticeMouseX = 0;
+	int prevLatticeMouseY = 0;
+
 	window.render([&](bool window_size_changed) {
 		if ( pause_key.wasClicked() ) {
 			update_lattice = !update_lattice;
@@ -131,12 +135,19 @@ int renderWindow() {
 				{
 					auto guard = collide_shader->use();
 
+					collide_shader->setUniform("prevMouseState", prevLatticeMouseState);
+					collide_shader->setUniform("prevMousePos", prevLatticeMouseX, prevLatticeMouseY);
+
 					const auto m = window.getMouse();
 					const float latticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
 					const float latticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
 
-					collide_shader->setUniform("mouseState", std::get<0>(m));
-					collide_shader->setUniform("mousePos", latticeMouseX, latticeMouseY);
+					collide_shader->setUniform("currMouseState", std::get<0>(m));
+					collide_shader->setUniform("currMousePos", latticeMouseX, latticeMouseY);
+
+					prevLatticeMouseState = std::get<0>(m);
+					prevLatticeMouseX = latticeMouseX;
+					prevLatticeMouseY = latticeMouseY;
 
 					collide_shader->dispatch(nX, nY);
 				}

@@ -9,8 +9,10 @@ layout (std430, binding=3) buffer bufferFluid    { float fluidCells[];    };
 
 /// external influence
 
-uniform int  mouseState;
-uniform vec2 mousePos;
+uniform int  prevMouseState;
+uniform vec2 prevMousePos;
+uniform int  currMouseState;
+uniform vec2 currMousePos;
 
 /// LBM constants
 
@@ -38,7 +40,23 @@ float sq(float x) {
 }
 
 float norm(vec2 v) {
-	return sqrt(sq(v.x)+sq(v.y));
+	return sqrt(dot(v,v));
+}
+
+float distanceToLineSegment(vec2 a, vec2 b, vec2 p) {
+	const vec2 ab = b - a;
+
+	const vec2 pa = a - p;
+	if ( dot(ab, pa) > 0.0 ) {
+		return norm(pa);
+	}
+
+	const vec2 bp = p - b;
+	if ( dot(ab, bp) > 0.0 ) {
+		return norm(bp);
+	}
+
+	return norm(pa - ab * (dot(ab, pa) / dot(ab, ab)));
 }
 
 /// Array indexing
@@ -130,8 +148,16 @@ void disableWallInterior(uint x, uint y) {
 
 /// Determine external influence
 
+bool isNearMouse(uint x, uint y, float eps) {
+	if ( prevMouseState == currMouseState ) {
+		return distanceToLineSegment(prevMousePos, currMousePos, vec2(x,y)) < eps;
+	} else {
+		return norm(vec2(x,y) - currMousePos) < eps;
+	}
+}
+
 float getExternalPressureInflux(uint x, uint y) {
-	if ( mouseState == 1 && norm(vec2(x,y) - mousePos) < 2 ) {
+	if ( currMouseState == 1 && isNearMouse(x, y, 3) ) {
 		return 1.5;
 	} else {
 		return 0.0;
@@ -139,7 +165,7 @@ float getExternalPressureInflux(uint x, uint y) {
 }
 
 bool isWallRequestedAt(uint x, uint y) {
-	if ( mouseState == 2 && norm(vec2(x,y) - mousePos) < 2 ) {
+	if ( currMouseState == 2 && isNearMouse(x, y, 3) ) {
 		return true;
 	} else {
 		return false;
