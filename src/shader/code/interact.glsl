@@ -1,0 +1,127 @@
+static const std::string INTERACT_SHADER_CODE = R"(
+#version 430
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout (std430, binding=3) buffer bufferFluid { float fluidCells[]; };
+
+uniform uint nX;
+uniform uint nY;
+
+/// External influence
+
+uniform int  prevMouseState;
+uniform vec2 prevMousePos;
+uniform int  currMouseState;
+uniform vec2 currMousePos;
+
+/// Vector utilities
+
+float norm(vec2 v) {
+	return sqrt(dot(v,v));
+}
+
+float distanceToLineSegment(vec2 a, vec2 b, vec2 p) {
+	const vec2 ab = b - a;
+
+	const vec2 pa = a - p;
+	if ( dot(ab, pa) > 0.0 ) {
+		return norm(pa);
+	}
+
+	const vec2 bp = p - b;
+	if ( dot(ab, bp) > 0.0 ) {
+		return norm(bp);
+	}
+
+	return norm(pa - ab * (dot(ab, pa) / dot(ab, ab)));
+}
+
+/// Array indexing
+
+uint indexOfFluidVertex(uint x, uint y) {
+	return 3*nX*y + 3*x;
+}
+
+/// Data access
+
+int getMaterial(uint x, uint y) {
+	const uint idx = indexOfFluidVertex(x, y);
+	return int(fluidCells[idx + 2]);
+}
+
+void setMaterial(uint x, uint y, int m) {
+	const uint idx = indexOfFluidVertex(x, y);
+	fluidCells[idx + 2] = m;
+}
+
+/// Geometry cleanup
+
+void disableWallInterior(uint x, uint y) {
+	int wallNeighbors = 0;
+
+	for ( int i = -1; i <= 1; ++i ) {
+		for ( int j = -1; j <= 1; ++j ) {
+			const int material = getMaterial(x+i,y+j);
+			if ( material  == 0 || material == 2 || material == 3 ) {
+				++wallNeighbors;
+			}
+		}
+	}
+
+	if ( wallNeighbors == 9 ) {
+		setMaterial(x,y,0);
+	}
+}
+
+/// Determine external influence
+
+bool isNearMouse(uint x, uint y, float eps) {
+	if ( prevMouseState == currMouseState ) {
+		return distanceToLineSegment(prevMousePos, currMousePos, vec2(x,y)) < eps;
+	} else {
+		return norm(vec2(x,y) - currMousePos) < eps;
+	}
+}
+
+bool isInfluxRequestedAt(uint x, uint y) {
+	return currMouseState == 1 && isNearMouse(x, y, 3);
+}
+
+bool isWallRequestedAt(uint x, uint y) {
+	return currMouseState == 2 && isNearMouse(x, y, 3);
+}
+
+/// Actual interaction kernel
+
+void main() {
+	const uint x = gl_GlobalInvocationID.x;
+	const uint y = gl_GlobalInvocationID.y;
+
+	if ( !(x < nX && y < nY) ) {
+		return;
+	}
+
+	const int material = getMaterial(x,y);
+
+	if ( material == 1 ) {
+		if ( isInfluxRequestedAt(x,y) ) {
+			setMaterial(x,y,4);
+			return;
+		}
+		if ( isWallRequestedAt(x,y) ) {
+			setMaterial(x,y,3);
+			return;
+		}
+	}
+
+	if ( material == 3 ) {
+		disableWallInterior(x,y);
+	}
+
+	if ( material == 4 ) {
+		// reset influx material after execution
+		setMaterial(x,y,1);
+	}
+}
+)";

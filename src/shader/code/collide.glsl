@@ -7,13 +7,6 @@ layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
 layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
 layout (std430, binding=3) buffer bufferFluid    { float fluidCells[];    };
 
-/// external influence
-
-uniform int  prevMouseState;
-uniform vec2 prevMousePos;
-uniform int  currMouseState;
-uniform vec2 currMousePos;
-
 /// LBM constants
 
 uniform uint nX;
@@ -41,22 +34,6 @@ float sq(float x) {
 
 float norm(vec2 v) {
 	return sqrt(dot(v,v));
-}
-
-float distanceToLineSegment(vec2 a, vec2 b, vec2 p) {
-	const vec2 ab = b - a;
-
-	const vec2 pa = a - p;
-	if ( dot(ab, pa) > 0.0 ) {
-		return norm(pa);
-	}
-
-	const vec2 bp = p - b;
-	if ( dot(ab, bp) > 0.0 ) {
-		return norm(bp);
-	}
-
-	return norm(pa - ab * (dot(ab, pa) / dot(ab, ab)));
 }
 
 /// Array indexing
@@ -98,11 +75,6 @@ int getMaterial(uint x, uint y) {
 	return int(fluidCells[idx + 2]);
 }
 
-void setMaterial(uint x, uint y, int m) {
-	const uint idx = indexOfFluidVertex(x, y);
-	fluidCells[idx + 2] = m;
-}
-
 /// Moments
 
 float density(uint x, uint y) {
@@ -127,50 +99,19 @@ float equilibrium(float d, vec2 v, int i, int j) {
 	return w(i,j) * d * (1 + 3*comp(i,j,v) + 4.5*sq(comp(i,j,v)) - 1.5*sq(norm(v)));
 }
 
-/// Disable wall interior
+/// Material number meaning (geometry is only changed by the interaction shader)
 
-void disableWallInterior(uint x, uint y) {
-	int wallNeighbors = 0;
-
-	for ( int i = -1; i <= 1; ++i ) {
-		for ( int j = -1; j <= 1; ++j ) {
-			const int material = getMaterial(x+i,y+j);
-			if ( material  == 0 || material == 2 || material == 3 ) {
-				++wallNeighbors;
-			}
-		}
-	}
-
-	if ( wallNeighbors == 9 ) {
-		setMaterial(x,y,0);
-	}
+bool isBulkFluidCell(int material) {
+	return material == 1 || material == 4;
 }
 
-/// Determine external influence
-
-bool isNearMouse(uint x, uint y, float eps) {
-	if ( prevMouseState == currMouseState ) {
-		return distanceToLineSegment(prevMousePos, currMousePos, vec2(x,y)) < eps;
-	} else {
-		return norm(vec2(x,y) - currMousePos) < eps;
-	}
-}
-
-float getExternalPressureInflux(uint x, uint y) {
-	if ( currMouseState == 1 && isNearMouse(x, y, 3) ) {
+float getExternalMassInflux(int material) {
+	if ( material == 4 ) {
 		return 1.5;
 	} else {
 		return 0.0;
 	}
-}
-
-bool isWallRequestedAt(uint x, uint y) {
-	if ( currMouseState == 2 && isNearMouse(x, y, 3) ) {
-		return true;
-	} else {
-		return false;
-	}
-}
+};
 
 /// Actual collide kernel
 
@@ -184,17 +125,8 @@ void main() {
 
 	const int material = getMaterial(x,y);
 
-	if ( isWallRequestedAt(x,y) && material == 1 ) {
-		setMaterial(x,y,3);
-		return;
-	}
-
-	if ( material == 3 ) { // manually added wall
-		disableWallInterior(x,y);
-	}
-
-	if ( material == 1 ) { // fluid
-		const float d = max(getExternalPressureInflux(x,y), density(x,y));
+	if ( isBulkFluidCell(material) ) {
+		const float d = max(density(x,y), getExternalMassInflux(material));
 		const vec2  v = velocity(x,y,d);
 
 		setFluid(x,y,v);

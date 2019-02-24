@@ -18,6 +18,7 @@
 #include "shader/code/vertex.glsl"
 #include "shader/code/fragment.glsl"
 
+#include "shader/code/interact.glsl"
 #include "shader/code/collide.glsl"
 #include "shader/code/stream.glsl"
 
@@ -67,6 +68,7 @@ int renderWindow() {
 	std::unique_ptr<LatticeCellBuffer> lattice_b;
 	std::unique_ptr<FluidCellBuffer>   fluid;
 
+	std::unique_ptr<ComputeShader> interact_shader;
 	std::unique_ptr<ComputeShader> collide_shader;
 	std::unique_ptr<ComputeShader> stream_shader;
 
@@ -87,11 +89,12 @@ int renderWindow() {
 			return 1; // everything shall be fluid
 		});
 
-		collide_shader = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
-		stream_shader  = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
+		interact_shader = std::make_unique<ComputeShader>(INTERACT_SHADER_CODE);
+		collide_shader  = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
+		stream_shader   = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
 	});
 
-	if ( !collide_shader->isGood() || !stream_shader->isGood() ) {
+	if ( !interact_shader->isGood() || !collide_shader->isGood() || !stream_shader->isGood() ) {
 		std::cerr << "Compute shader error." << std::endl;
 		return -1;
 	}
@@ -125,30 +128,40 @@ int renderWindow() {
 				if ( tick ) {
 					collide_shader->workOn(tick_buffers);
 					stream_shader->workOn(tick_buffers);
+					interact_shader->workOn(tick_buffers);
 					tick = false;
 				} else {
 					collide_shader->workOn(tock_buffers);
 					stream_shader->workOn(tock_buffers);
+					interact_shader->workOn(tock_buffers);
 					tick = true;
 				}
 
-				{
-					auto guard = collide_shader->use();
+				/// Handle mouse-based interaction
+				const auto m = window.getMouse();
 
-					collide_shader->setUniform("prevMouseState", prevLatticeMouseState);
-					collide_shader->setUniform("prevMousePos", prevLatticeMouseX, prevLatticeMouseY);
+				if ( std::get<0>(m) != 0 || prevLatticeMouseState != 0 ) {
+					auto guard = interact_shader->use();
 
-					const auto m = window.getMouse();
+					interact_shader->setUniform("prevMouseState", prevLatticeMouseState);
+					interact_shader->setUniform("prevMousePos", prevLatticeMouseX, prevLatticeMouseY);
+
 					const float latticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
 					const float latticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
 
-					collide_shader->setUniform("currMouseState", std::get<0>(m));
-					collide_shader->setUniform("currMousePos", latticeMouseX, latticeMouseY);
+					interact_shader->setUniform("currMouseState", std::get<0>(m));
+					interact_shader->setUniform("currMousePos", latticeMouseX, latticeMouseY);
 
 					prevLatticeMouseState = std::get<0>(m);
 					prevLatticeMouseX = latticeMouseX;
 					prevLatticeMouseY = latticeMouseY;
 
+					interact_shader->dispatch(nX, nY);
+				}
+
+				/// Perform collide & stream steps
+				{
+					auto guard = collide_shader->use();
 					collide_shader->dispatch(nX, nY);
 				}
 				{
