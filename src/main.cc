@@ -108,12 +108,16 @@ int renderWindow() {
 
 	auto pause_key = window.getKeyWatcher(GLFW_KEY_SPACE);
 
+	int prevMouseState = 0;
+	float prevLatticeMouseX;
+	float prevLatticeMouseY;
+
+	int currMouseState = 0;
+	float currLatticeMouseX;
+	float currLatticeMouseY;
+
 	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
 	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
-
-	int prevLatticeMouseState = 0;
-	int prevLatticeMouseX = 0;
-	int prevLatticeMouseY = 0;
 
 	window.render([&](bool window_size_changed) {
 		if ( pause_key.wasClicked() ) {
@@ -139,24 +143,28 @@ int renderWindow() {
 					tick = true;
 				}
 
-				/// Handle mouse-based interaction
-				const auto m = window.getMouse();
+				/// Update mouse projection
+				{
+					const auto m = window.getMouse();
 
-				if ( std::get<0>(m) != 0 || prevLatticeMouseState != 0 ) {
+					prevMouseState = currMouseState;
+					prevLatticeMouseX = currLatticeMouseX;
+					prevLatticeMouseY = currLatticeMouseY;
+
+					currMouseState = std::get<0>(m);
+					currLatticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
+					currLatticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
+				}
+
+				/// Handle mouse-based interaction
+				if ( currMouseState != 0 || prevMouseState != 0 ) {
 					auto guard = interact_shader->use();
 
-					interact_shader->setUniform("prevMouseState", prevLatticeMouseState);
-					interact_shader->setUniform("prevMousePos", prevLatticeMouseX, prevLatticeMouseY);
+					interact_shader->setUniform("influxRequested", currMouseState == 1);
+					interact_shader->setUniform("wallRequested",   currMouseState == 2);
 
-					const float latticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
-					const float latticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
-
-					interact_shader->setUniform("currMouseState", std::get<0>(m));
-					interact_shader->setUniform("currMousePos", latticeMouseX, latticeMouseY);
-
-					prevLatticeMouseState = std::get<0>(m);
-					prevLatticeMouseX = latticeMouseX;
-					prevLatticeMouseY = latticeMouseY;
+					interact_shader->setUniform("startOfLine", prevLatticeMouseX, prevLatticeMouseY);
+					interact_shader->setUniform("endOfLine", currLatticeMouseX, currLatticeMouseY);
 
 					interact_shader->dispatch(nX, nY);
 				}

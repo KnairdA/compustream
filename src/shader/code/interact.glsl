@@ -10,10 +10,11 @@ uniform uint nY;
 
 /// External influence
 
-uniform int  prevMouseState;
-uniform vec2 prevMousePos;
-uniform int  currMouseState;
-uniform vec2 currMousePos;
+uniform bool influxRequested;
+uniform bool wallRequested;
+
+uniform vec2 startOfLine;
+uniform vec2 endOfLine;
 
 /// Vector utilities
 
@@ -35,6 +36,14 @@ float distanceToLineSegment(vec2 a, vec2 b, vec2 p) {
 	}
 
 	return norm(pa - ab * (dot(ab, pa) / dot(ab, ab)));
+}
+
+bool isNearLine(uint x, uint y, float eps) {
+	if ( startOfLine == endOfLine ) {
+		return norm(vec2(x,y) - endOfLine) < eps;
+	} else {
+		return distanceToLineSegment(startOfLine, endOfLine, vec2(x,y)) < eps;
+	}
 }
 
 /// Array indexing
@@ -74,24 +83,6 @@ void disableWallInterior(uint x, uint y) {
 	}
 }
 
-/// Determine external influence
-
-bool isNearMouse(uint x, uint y, float eps) {
-	if ( prevMouseState == currMouseState ) {
-		return distanceToLineSegment(prevMousePos, currMousePos, vec2(x,y)) < eps;
-	} else {
-		return norm(vec2(x,y) - currMousePos) < eps;
-	}
-}
-
-bool isInfluxRequestedAt(uint x, uint y) {
-	return currMouseState == 1 && isNearMouse(x, y, 3);
-}
-
-bool isWallRequestedAt(uint x, uint y) {
-	return currMouseState == 2 && isNearMouse(x, y, 3);
-}
-
 /// Actual interaction kernel
 
 void main() {
@@ -105,13 +96,15 @@ void main() {
 	const int material = getMaterial(x,y);
 
 	if ( material == 1 ) {
-		if ( isInfluxRequestedAt(x,y) ) {
-			setMaterial(x,y,4);
-			return;
-		}
-		if ( isWallRequestedAt(x,y) ) {
-			setMaterial(x,y,3);
-			return;
+		if ( isNearLine(x, y, 3) ) {
+			if ( influxRequested ) {
+				setMaterial(x,y,4);
+				return;
+			}
+			if ( wallRequested ) {
+				setMaterial(x,y,3);
+				return;
+			}
 		}
 	}
 
