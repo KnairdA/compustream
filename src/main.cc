@@ -49,7 +49,18 @@ glm::mat4 getMVP(float world_width, float world_height) {
 	return projection * view;
 }
 
-int setupGeometry(int x, int y) {
+int setupPlainGeometry(int x, int y) {
+	if ( x == 0 || y == 0 || x == nX-1 || y == nY-1 ) {
+		return 0; // disable end of world
+	}
+	if (   ((x == 1 || x == nX-2) && (y > 0 && y < nY-1))
+	    || ((y == 1 || y == nY-2) && (x > 0 && x < nX-1)) ) {
+		return 2; // bounce back outer walls
+	}
+	return 1; // everything else shall be bulk fluid
+}
+
+int setupOpenGeometry(int x, int y) {
 	if ( x == 0 || y == 0 || x == nX-1 || y == nY-1 ) {
 		return 0; // disable end of world
 	}
@@ -68,7 +79,7 @@ int setupGeometry(int x, int y) {
 	return 1; // everything else shall be bulk fluid
 }
 
-int renderWindow() {
+int render(bool open_boundaries) {
 	Window window("compustream");
 
 	if ( !window.isGood() ) {
@@ -97,7 +108,7 @@ int renderWindow() {
 
 		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
 		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);
-		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY, setupGeometry);
+		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY, open_boundaries ? setupOpenGeometry : setupPlainGeometry);
 
 		interact_shader = std::make_unique<ComputeShader>(INTERACT_SHADER_CODE);
 		collide_shader  = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
@@ -214,5 +225,5 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	return renderWindow();
+	return render(std::string_view(argv[1]) == "--open");
 }
