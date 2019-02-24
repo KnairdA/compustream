@@ -25,7 +25,7 @@
 #include "timer.h"
 
 constexpr GLuint nX = 256;
-constexpr GLuint nY = 256;
+constexpr GLuint nY = 128;
 
 constexpr int lups = 50; // max lattice updates per second
 
@@ -53,11 +53,19 @@ int setupGeometry(int x, int y) {
 	if ( x == 0 || y == 0 || x == nX-1 || y == nY-1 ) {
 		return 0; // disable end of world
 	}
-	if (   ((x == 1 || x == nX-2) && (y > 0 && y < nY-1))
-		|| ((y == 1 || y == nY-2) && (x > 0 && x < nX-1)) ) {
+	if ( (x == 1 || x == nX-2) && (y > 0 && y < nY-1) ) {
+		if ( x == 1 && y > nY/4 && y < 3*nY/4 ) {
+			return 5; // inflow
+		}
+		if ( x == nX-2 && y > nY/4 && y < 3*nY/4 ) {
+			return 6; // outflow
+		}
 		return 2; // bounce back outer walls
 	}
-	return 1; // everything else shall be fluid
+	if ( (y == 1 || y == nY-2) && (x > 0 && x < nX-1) ) {
+		return 2; // bounce back outer walls
+	}
+	return 1; // everything else shall be bulk fluid
 }
 
 int renderWindow() {
@@ -68,7 +76,7 @@ int renderWindow() {
 		return -1;
 	}
 
-	float world_width  = 1.5*nX;
+	float world_width  = 1*nX;
 	float world_height = getWorldHeight(window.getWidth(), window.getHeight(), world_width);
 
 	glm::mat4 MVP = getMVP(world_width,  world_height);

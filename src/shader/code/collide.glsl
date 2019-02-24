@@ -102,7 +102,7 @@ float equilibrium(float d, vec2 v, int i, int j) {
 /// Material number meaning (geometry is only changed by the interaction shader)
 
 bool isBulkFluidCell(int material) {
-	return material == 1 || material == 4;
+	return material == 1 || material == 4 || material == 5 || material == 6;
 }
 
 float getExternalMassInflux(int material) {
@@ -126,8 +126,15 @@ void main() {
 	const int material = getMaterial(x,y);
 
 	if ( isBulkFluidCell(material) ) {
-		const float d = max(density(x,y), getExternalMassInflux(material));
-		const vec2  v = velocity(x,y,d);
+		float d = max(density(x,y), getExternalMassInflux(material));
+		vec2  v = velocity(x,y,d);
+
+		if ( material == 5 ) {
+			v = vec2(0.1,0.0);
+		}
+		if ( material == 6 ) {
+			d = 1.0;
+		}
 
 		setFluid(x,y,v);
 
