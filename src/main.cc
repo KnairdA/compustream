@@ -20,7 +20,6 @@
 
 #include "shader/code/interact.glsl"
 #include "shader/code/collide.glsl"
-#include "shader/code/stream.glsl"
 
 #include "timer.h"
 
@@ -100,7 +99,6 @@ int render(bool open_boundaries) {
 
 	std::unique_ptr<ComputeShader> interact_shader;
 	std::unique_ptr<ComputeShader> collide_shader;
-	std::unique_ptr<ComputeShader> stream_shader;
 
 	window.init([&]() {
 		scene_shader = std::make_unique<GraphicShader>(
@@ -112,10 +110,9 @@ int render(bool open_boundaries) {
 
 		interact_shader = std::make_unique<ComputeShader>(INTERACT_SHADER_CODE);
 		collide_shader  = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
-		stream_shader   = std::make_unique<ComputeShader>(STREAM_SHADER_CODE);
 	});
 
-	if ( !interact_shader->isGood() || !collide_shader->isGood() || !stream_shader->isGood() ) {
+	if ( !interact_shader->isGood() || !collide_shader->isGood() ) {
 		std::cerr << "Compute shader error." << std::endl;
 		return -1;
 	}
@@ -151,14 +148,12 @@ int render(bool open_boundaries) {
 		if ( update_lattice ) {
 			if ( timer::millisecondsSince(last_frame) >= 1000/lups ) {
 				if ( tick ) {
-					collide_shader->workOn(tick_buffers);
-					stream_shader->workOn(tick_buffers);
 					interact_shader->workOn(tick_buffers);
+					collide_shader->workOn(tick_buffers);
 					tick = false;
 				} else {
-					collide_shader->workOn(tock_buffers);
-					stream_shader->workOn(tock_buffers);
 					interact_shader->workOn(tock_buffers);
+					collide_shader->workOn(tock_buffers);
 					tick = true;
 				}
 
@@ -192,10 +187,6 @@ int render(bool open_boundaries) {
 				{
 					auto guard = collide_shader->use();
 					collide_shader->dispatch(nX, nY);
-				}
-				{
-					auto guard = stream_shader->use();
-					stream_shader->dispatch(nX, nY);
 				}
 
 				last_frame = timer::now();

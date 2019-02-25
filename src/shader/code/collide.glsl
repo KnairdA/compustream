@@ -61,7 +61,7 @@ float get(uint x, uint y, int i, int j) {
 }
 
 void set(uint x, uint y, int i, int j, float v) {
-	collideCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
+	streamCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
 }
 
 void setFluid(uint x, uint y, vec2 v) {
@@ -105,6 +105,18 @@ bool isBulkFluidCell(int material) {
 	return material == 1 || material == 4 || material == 5 || material == 6;
 }
 
+bool isBounceBackCell(int material) {
+	return material == 2 || material == 3;
+}
+
+bool isInflowCell(int material) {
+	return material == 5;
+}
+
+bool isOutflowCell(int material) {
+	return material == 6;
+}
+
 float getExternalMassInflux(int material) {
 	if ( material == 4 ) {
 		return 1.5;
@@ -113,7 +125,7 @@ float getExternalMassInflux(int material) {
 	}
 };
 
-/// Actual collide kernel
+/// Actual collide&stream kernel
 
 void main() {
 	const uint x = gl_GlobalInvocationID.x;
@@ -125,14 +137,14 @@ void main() {
 
 	const int material = getMaterial(x,y);
 
-	if ( isBulkFluidCell(material) ) {
-		float d = max(density(x,y), getExternalMassInflux(material));
-		vec2  v = velocity(x,y,d);
+	float d = max(density(x,y), getExternalMassInflux(material));
+	vec2  v = velocity(x,y,d);
 
-		if ( material == 5 ) {
+	if ( isBulkFluidCell(material) ) {
+		if ( isInflowCell(material) ) {
 			v = vec2(0.1,0.0);
 		}
-		if ( material == 6 ) {
+		if ( isOutflowCell(material) ) {
 			d = 1.0;
 		}
 
@@ -140,7 +152,15 @@ void main() {
 
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {
-				set(x,y,i,j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+				set(x+i,y+j,i,j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+			}
+		}
+	}
+
+	if ( isBounceBackCell(material) ) {
+		for ( int i = -1; i <= 1; ++i ) {
+			for ( int j = -1; j <= 1; ++j ) {
+				set(x+(-1)*i,y+(-1)*j,(-1)*i,(-1)*j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
 			}
 		}
 	}
