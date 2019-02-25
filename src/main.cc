@@ -23,10 +23,10 @@
 
 #include "timer.h"
 
-constexpr GLuint nX = 256;
+constexpr GLuint nX = 512;
 constexpr GLuint nY = 128;
 
-constexpr int lups = 50; // max lattice updates per second
+constexpr int lups = 100; // max lattice updates per second
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -64,16 +64,19 @@ int setupOpenGeometry(int x, int y) {
 		return 0; // disable end of world
 	}
 	if ( (x == 1 || x == nX-2) && (y > 0 && y < nY-1) ) {
-		if ( x == 1 && y > nY/4 && y < 3*nY/4 ) {
+		if ( x == 1 && y > 1 && y < nY-2 ) {
 			return 5; // inflow
 		}
-		if ( x == nX-2 && y > nY/4 && y < 3*nY/4 ) {
+		if ( x == nX-2 && y > 1 && y < nY-2 ) {
 			return 6; // outflow
 		}
 		return 2; // bounce back outer walls
 	}
 	if ( (y == 1 || y == nY-2) && (x > 0 && x < nX-1) ) {
 		return 2; // bounce back outer walls
+	}
+	if ( (x-50)*(x-50) + (y-nY/2)*(y-nY/2) < 200 ) {
+		return 3; // bounce back cylinder
 	}
 	return 1; // everything else shall be bulk fluid
 }
@@ -86,7 +89,7 @@ int render(bool open_boundaries) {
 		return -1;
 	}
 
-	float world_width  = 1*nX;
+	float world_width  = 1.1*nX;
 	float world_height = getWorldHeight(window.getWidth(), window.getHeight(), world_width);
 
 	glm::mat4 MVP = getMVP(world_width,  world_height);
@@ -123,6 +126,8 @@ int render(bool open_boundaries) {
 	bool tick           = true;
 
 	auto pause_key = window.getKeyWatcher(GLFW_KEY_SPACE);
+
+	GLuint iT = 0;
 
 	int prevMouseState = 0;
 	float prevLatticeMouseX;
@@ -186,6 +191,10 @@ int render(bool open_boundaries) {
 				/// Perform collide & stream steps
 				{
 					auto guard = collide_shader->use();
+
+					collide_shader->setUniform("iT", iT);
+					iT += 1;
+
 					collide_shader->dispatch(nX, nY);
 				}
 

@@ -7,10 +7,11 @@ layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
 layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
 layout (std430, binding=3) buffer bufferFluid    { float fluidCells[];    };
 
-/// LBM constants
-
 uniform uint nX;
 uniform uint nY;
+uniform uint iT;
+
+/// LBM constants
 
 const uint  q         = 9;
 const float weight[q] = float[](
@@ -19,7 +20,7 @@ const float weight[q] = float[](
 	1./36 , 1./9., 1./36.
 );
 
-const float tau   = 0.8;
+const float tau   = 0.6;
 const float omega = 1/tau;
 
 /// Vector utilities
@@ -142,7 +143,7 @@ void main() {
 
 	if ( isBulkFluidCell(material) ) {
 		if ( isInflowCell(material) ) {
-			v = vec2(0.1,0.0);
+			v = vec2(min(float(iT)*0.2/2000.0, 0.2), 0.0);
 		}
 		if ( isOutflowCell(material) ) {
 			d = 1.0;
