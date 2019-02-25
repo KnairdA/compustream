@@ -26,7 +26,7 @@
 constexpr GLuint nX = 512;
 constexpr GLuint nY = 128;
 
-constexpr int lups = 100; // max lattice updates per second
+constexpr double maxLUPS = 500;
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -120,14 +120,10 @@ int render(bool open_boundaries) {
 		return -1;
 	}
 
-	auto last_frame = timer::now();
-
 	bool update_lattice = true;
 	bool tick           = true;
 
 	auto pause_key = window.getKeyWatcher(GLFW_KEY_SPACE);
-
-	GLuint iT = 0;
 
 	int prevMouseState = 0;
 	float prevLatticeMouseX;
@@ -140,6 +136,12 @@ int render(bool open_boundaries) {
 	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
 	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
 
+	GLuint iT = 0;
+	int statLUPS = 0;
+
+	auto last_lattice_update = timer::now();
+	auto last_lups_update    = timer::now();
+
 	window.render([&](bool window_size_changed) {
 		if ( pause_key.wasClicked() ) {
 			update_lattice = !update_lattice;
@@ -151,7 +153,15 @@ int render(bool open_boundaries) {
 		}
 
 		if ( update_lattice ) {
-			if ( timer::millisecondsSince(last_frame) >= 1000/lups ) {
+			if ( timer::secondsSince(last_lups_update) >= 1.0 ) {
+				std::cout << "\rComputing about " << statLUPS << " lattice updates per second." << std::flush;
+				statLUPS = 0;
+				last_lups_update = timer::now();
+			}
+
+			if ( timer::millisecondsSince(last_lattice_update) >= 1000/maxLUPS ) {
+				statLUPS += 1;
+
 				if ( tick ) {
 					interact_shader->workOn(tick_buffers);
 					collide_shader->workOn(tick_buffers);
@@ -198,7 +208,7 @@ int render(bool open_boundaries) {
 					collide_shader->dispatch(nX, nY);
 				}
 
-				last_frame = timer::now();
+				last_lattice_update = timer::now();
 			}
 		}
 
@@ -213,6 +223,8 @@ int render(bool open_boundaries) {
 			fluid->draw();
 		}
 	});
+
+	std::cout << std::endl;
 
 	return 0;
 }

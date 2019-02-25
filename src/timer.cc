@@ -13,4 +13,11 @@ double millisecondsSince(
 	).count();
 }
 
+double secondsSince(
+	std::chrono::time_point<std::chrono::high_resolution_clock>& pit) {
+	return std::chrono::duration_cast<std::chrono::seconds>(
+		now() - pit
+	).count();
+}
+
 }

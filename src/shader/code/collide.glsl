@@ -20,7 +20,7 @@ const float weight[q] = float[](
 	1./36 , 1./9., 1./36.
 );
 
-const float tau   = 0.6;
+const float tau   = 0.65;
 const float omega = 1/tau;
 
 /// Vector utilities
