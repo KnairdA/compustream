@@ -143,7 +143,7 @@ void main() {
 
 	if ( isBulkFluidCell(material) ) {
 		if ( isInflowCell(material) ) {
-			v = vec2(min(float(iT)*0.2/2000.0, 0.2), 0.0);
+			d = min(1.0+float(iT)*0.2/1000.0, 1.2);
 		}
 		if ( isOutflowCell(material) ) {
 			d = 1.0;
