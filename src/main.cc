@@ -23,10 +23,10 @@
 
 #include "timer.h"
 
-constexpr GLuint nX = 512;
-constexpr GLuint nY = 128;
-
-constexpr double maxLUPS = 500;
+GLuint maxLUPS = 100;
+GLuint nX = 512;
+GLuint nY = 256;
+bool   open_boundaries = false;
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -75,13 +75,10 @@ int setupOpenGeometry(int x, int y) {
 	if ( (y == 1 || y == nY-2) && (x > 0 && x < nX-1) ) {
 		return 2; // bounce back outer walls
 	}
-	if ( (x-50)*(x-50) + (y-nY/2)*(y-nY/2) < 200 ) {
-		return 3; // bounce back cylinder
-	}
 	return 1; // everything else shall be bulk fluid
 }
 
-int render(bool open_boundaries) {
+int render() {
 	Window window("compustream");
 
 	if ( !window.isGood() ) {
@@ -229,13 +226,62 @@ int render(bool open_boundaries) {
 	return 0;
 }
 
-int main(int argc, char* argv[]) {
-	GlfwGuard glfw;
+bool parseArguments(int argc, char* argv[]) {
+	for ( int i = 1; i < argc; ++i ) {
+		const auto& arg = std::string_view(argv[i]);
 
-	if( !glfw.isGood() ) {
-		std::cerr << "Failed to initialize GLFW." << std::endl;
+		if ( arg == "--lups" ) {
+			if ( i+1 < argc ) {
+				try {
+					i       += 1;
+					maxLUPS = std::stoi(argv[i]);
+				}
+				catch ( std::invalid_argument& ex ) {
+					std::cerr << "Maximum lattice updates per second malformed." << std::endl;
+					return false;
+				}
+			} else {
+				std::cerr << "Maximum lattice updates per second undefined." << std::endl;
+				return false;
+			}
+		}
+
+		if ( arg == "--size" ) {
+			if ( i+2 < argc ) {
+				try {
+					i += 1;
+					nX = std::stoi(argv[i]);
+					i += 1;
+					nY = std::stoi(argv[i]);
+				}
+				catch ( std::invalid_argument& ex ) {
+					std::cerr << "Lattice size malformed." << std::endl;
+					return false;
+				}
+			} else {
+				std::cerr << "Lattice size undefined." << std::endl;
+				return false;
+			}
+		}
+
+		if ( arg == "--open" ) {
+			open_boundaries = true;
+		}
+	}
+	return true;
+}
+
+int main(int argc, char* argv[]) {
+	if ( parseArguments(argc, argv) ) {
+		GlfwGuard glfw;
+
+		if( !glfw.isGood() ) {
+			std::cerr << "Failed to initialize GLFW." << std::endl;
+			return -1;
+		}
+
+		return render();
+	} else {
 		return -1;
 	}
-
-	return render(std::string_view(argv[1]) == "--open");
 }
