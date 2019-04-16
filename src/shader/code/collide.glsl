@@ -11,6 +11,12 @@ uniform uint nX;
 uniform uint nY;
 uniform uint iT;
 
+/// Fluid characteristics
+
+const float physCharLength   = 1.0;
+const float physCharVelocity = 1.0;
+const float physViscosity    = 0.1;
+
 /// LBM constants
 
 const uint  q         = 9;
@@ -19,9 +25,25 @@ const float weight[q] = float[](
 	1./9. , 4./9., 1./9. ,
 	1./36 , 1./9., 1./36.
 );
+const float invCs2 = 1./3.;
 
-const float tau   = 0.65;
-const float omega = 1/tau;
+const float relaxationTime      = 0.6;
+const float relaxationFrequency = 1 / relaxationTime;
+
+/// Unit conversion
+
+const float convLength    = physCharLength / nX;
+const float convTime      = (relaxationTime - 0.5) / invCs2 * convLength*convLength / physViscosity;
+const float convVelocity  = convLength / convTime;
+const float convViscosity = convLength * convLength / convTime;
+
+const float latticeCharVelocity = physCharVelocity / convVelocity;
+
+/// Emergent fluid numbers
+
+const float Re = physCharVelocity * physCharLength / physViscosity;
+const float Ma = latticeCharVelocity * sqrt(invCs2);
+const float Kn = Ma / Re;
 
 /// Vector utilities
 
@@ -65,10 +87,16 @@ void set(uint x, uint y, int i, int j, float v) {
 	streamCells[indexOfLatticeCell(x,y) + indexOfDirection(i,j)] = v;
 }
 
-void setFluid(uint x, uint y, vec2 v) {
+void setFluidVelocity(uint x, uint y, vec2 v) {
 	const uint idx = indexOfFluidVertex(x, y);
 	fluidCells[idx + 0] = v.x;
 	fluidCells[idx + 1] = v.y;
+}
+
+void setFluidQuality(uint x, uint y, float knudsen, int quality) {
+	const uint idx = indexOfFluidVertex(x, y);
+	fluidCells[idx + 0] = knudsen;
+	fluidCells[idx + 1] = quality;
 }
 
 int getMaterial(uint x, uint y) {
@@ -149,19 +177,29 @@ void main() {
 			d = 1.0;
 		}
 
-		setFluid(x,y,v);
+		//setFluidVelocity(x,y,v);
+
+		float knudsen = 0.0;
 
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {
-				set(x+i,y+j,i,j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+				const float feq  = equilibrium(d,v,i,j);
+				const float fneq = get(x,y,i,j) - feq;
+				knudsen += abs(fneq / feq);
+
+				set(x+i,y+j,i,j, get(x,y,i,j) + relaxationFrequency * (feq - get(x,y,i,j)));
 			}
 		}
+
+		knudsen /= q;
+
+		setFluidQuality(x,y,knudsen,int(round(log2(knudsen / Kn))));
 	}
 
 	if ( isBounceBackCell(material) ) {
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {
-				set(x+(-1)*i,y+(-1)*j,(-1)*i,(-1)*j, get(x,y,i,j) + omega * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+				set(x+(-1)*i,y+(-1)*j,(-1)*i,(-1)*j, get(x,y,i,j) + relaxationFrequency * (equilibrium(d,v,i,j) - get(x,y,i,j)));
 			}
 		}
 	}

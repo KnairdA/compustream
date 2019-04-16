@@ -10,7 +10,8 @@ out VS_OUT {
 uniform uint nX;
 uniform uint nY;
 
-const float displayAmplifier = 3.0;
+const float velocityDisplayAmplifier = 3.0;
+const int   qualityDisplayRestrictor = 6;
 
 float unit(float x) {
 	return 1.0/(1.0+exp(-x));
@@ -40,6 +41,14 @@ bool isWallFrontier(int material) {
 	return material == 2 || material == 3;
 }
 
+float restrictedQuality(float quality) {
+	if ( quality < 0.0 ) {
+		return 0.0;
+	} else {
+		return min(1.0, quality / qualityDisplayRestrictor);
+	}
+}
+
 void main() {
 	const vec2 idx = fluidVertexAtIndex(gl_VertexID);
 
@@ -58,9 +67,9 @@ void main() {
 		vs_out.color = vec3(0.0, 0.0, 0.0);
 	} else {
 		vs_out.color = mix(
-			vec3(-0.5, 0.0, 1.0),
-			vec3( 1.0, 0.0, 0.0),
-			displayAmplifier * norm(VertexPosition.xy)
+			vec3(0.0, 1.0, 0.0),
+			vec3(1.0, 0.0, 0.0),
+			restrictedQuality(VertexPosition.y)
 		);
 	}
 }
