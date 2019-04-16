@@ -11,6 +11,8 @@ uniform uint nX;
 uniform uint nY;
 uniform uint iT;
 
+uniform bool fluidQuality;
+
 /// Fluid characteristics
 
 const float physCharLength   = 1.0;
@@ -154,6 +156,20 @@ float getExternalMassInflux(int material) {
 	}
 };
 
+float getLocalKnudsenApproximation(uint x, uint y, float d, vec2 v) {
+	float knudsen = 0.0;
+
+	for ( int i = -1; i <= 1; ++i ) {
+		for ( int j = -1; j <= 1; ++j ) {
+			const float feq  = equilibrium(d,v,i,j);
+			const float fneq = get(x,y,i,j) - feq;
+			knudsen += abs(fneq / feq);
+		}
+	}
+
+	return knudsen / q;
+}
+
 /// Actual collide&stream kernel
 
 void main() {
@@ -177,29 +193,26 @@ void main() {
 			d = 1.0;
 		}
 
-		//setFluidVelocity(x,y,v);
-
-		float knudsen = 0.0;
+		if ( fluidQuality ) {
+			const float approxKn = getLocalKnudsenApproximation(x,y,d,v);
+			setFluidQuality(x,y, approxKn, int(round(log2(approxKn / Kn))));
+		} else {
+			setFluidVelocity(x,y,v);
+		}
 
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {
-				const float feq  = equilibrium(d,v,i,j);
-				const float fneq = get(x,y,i,j) - feq;
-				knudsen += abs(fneq / feq);
-
-				set(x+i,y+j,i,j, get(x,y,i,j) + relaxationFrequency * (feq - get(x,y,i,j)));
+				set(x+i,y+j,i,j,
+				    get(x,y,i,j) + relaxationFrequency * (equilibrium(d,v,i,j) - get(x,y,i,j)));
 			}
 		}
-
-		knudsen /= q;
-
-		setFluidQuality(x,y,knudsen,int(round(log2(knudsen / Kn))));
 	}
 
 	if ( isBounceBackCell(material) ) {
 		for ( int i = -1; i <= 1; ++i ) {
 			for ( int j = -1; j <= 1; ++j ) {
-				set(x+(-1)*i,y+(-1)*j,(-1)*i,(-1)*j, get(x,y,i,j) + relaxationFrequency * (equilibrium(d,v,i,j) - get(x,y,i,j)));
+				set(x+(-1)*i,y+(-1)*j,(-1)*i,(-1)*j,
+				    get(x,y,i,j) + relaxationFrequency * (equilibrium(d,v,i,j) - get(x,y,i,j)));
 			}
 		}
 	}

@@ -26,7 +26,8 @@
 GLuint maxLUPS = 100;
 GLuint nX = 512;
 GLuint nY = 256;
-bool   open_boundaries = false;
+bool   open_boundaries    = false;
+bool   show_fluid_quality = false;
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -199,6 +200,7 @@ int render() {
 				{
 					auto guard = collide_shader->use();
 
+					collide_shader->setUniform("fluidQuality", show_fluid_quality);
 					collide_shader->setUniform("iT", iT);
 					iT += 1;
 
@@ -215,6 +217,7 @@ int render() {
 			scene_shader->setUniform("MVP", MVP);
 			scene_shader->setUniform("nX", nX);
 			scene_shader->setUniform("nY", nY);
+			scene_shader->setUniform("fluidQuality", show_fluid_quality);
 
 			glClear(GL_COLOR_BUFFER_BIT);
 			fluid->draw();
@@ -266,6 +269,10 @@ bool parseArguments(int argc, char* argv[]) {
 
 		if ( arg == "--open" ) {
 			open_boundaries = true;
+		}
+
+		if ( arg == "--quality" ) {
+			show_fluid_quality = true;
 		}
 	}
 	return true;
