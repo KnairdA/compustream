@@ -51,6 +51,22 @@ float restrictedQuality(float quality) {
 	}
 }
 
+vec3 trafficLightPalette(float x) {
+	if ( x < 0.5 ) {
+		return mix(
+			vec3(0.0, 1.0, 0.0),
+			vec3(1.0, 1.0, 0.0),
+			2*x
+		);
+	} else {
+		return mix(
+			vec3(1.0, 1.0, 0.0),
+			vec3(1.0, 0.0, 0.0),
+			2*(x - 0.5)
+		);
+	}
+}
+
 void main() {
 	const vec2 idx = fluidVertexAtIndex(gl_VertexID);
 
@@ -69,11 +85,7 @@ void main() {
 		vs_out.color = vec3(0.0, 0.0, 0.0);
 	} else {
 		if ( fluidQuality ) {
-			vs_out.color = mix(
-				vec3(0.0, 1.0, 0.0),
-				vec3(1.0, 0.0, 0.0),
-				restrictedQuality(VertexPosition.y)
-			);
+			vs_out.color = trafficLightPalette(restrictedQuality(VertexPosition.y));
 		} else {
 			vs_out.color = mix(
 				vec3(-0.5, 0.0, 1.0),

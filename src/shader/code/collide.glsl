@@ -34,7 +34,7 @@ const float relaxationFrequency = 1 / relaxationTime;
 
 /// Unit conversion
 
-const float convLength    = physCharLength / nX;
+const float convLength    = physCharLength / max(nX,nY);
 const float convTime      = (relaxationTime - 0.5) / invCs2 * convLength*convLength / physViscosity;
 const float convVelocity  = convLength / convTime;
 const float convViscosity = convLength * convLength / convTime;
