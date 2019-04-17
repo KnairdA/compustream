@@ -150,65 +150,63 @@ int render() {
 			MVP = getMVP(world_width, world_height);
 		}
 
-		if ( update_lattice ) {
+		if ( update_lattice && timer::millisecondsSince(last_lattice_update) >= 1000/maxLUPS ) {
 			if ( timer::secondsSince(last_lups_update) >= 1.0 ) {
 				std::cout << "\rComputing about " << statLUPS << " lattice updates per second." << std::flush;
 				statLUPS = 0;
 				last_lups_update = timer::now();
 			}
 
-			if ( timer::millisecondsSince(last_lattice_update) >= 1000/maxLUPS ) {
-				statLUPS += 1;
+			statLUPS += 1;
 
-				if ( tick ) {
-					interact_shader->workOn(tick_buffers);
-					collide_shader->workOn(tick_buffers);
-					tick = false;
-				} else {
-					interact_shader->workOn(tock_buffers);
-					collide_shader->workOn(tock_buffers);
-					tick = true;
-				}
-
-				/// Update mouse projection
-				{
-					const auto m = window.getMouse();
-
-					prevMouseState = currMouseState;
-					prevLatticeMouseX = currLatticeMouseX;
-					prevLatticeMouseY = currLatticeMouseY;
-
-					currMouseState = std::get<0>(m);
-					currLatticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
-					currLatticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
-				}
-
-				/// Handle mouse-based interaction
-				if ( currMouseState != 0 || prevMouseState != 0 ) {
-					auto guard = interact_shader->use();
-
-					interact_shader->setUniform("influxRequested", currMouseState == 1);
-					interact_shader->setUniform("wallRequested",   currMouseState == 2);
-
-					interact_shader->setUniform("startOfLine", prevLatticeMouseX, prevLatticeMouseY);
-					interact_shader->setUniform("endOfLine", currLatticeMouseX, currLatticeMouseY);
-
-					interact_shader->dispatch(nX, nY);
-				}
-
-				/// Perform collide & stream steps
-				{
-					auto guard = collide_shader->use();
-
-					collide_shader->setUniform("fluidQuality", show_fluid_quality);
-					collide_shader->setUniform("iT", iT);
-					iT += 1;
-
-					collide_shader->dispatch(nX, nY);
-				}
-
-				last_lattice_update = timer::now();
+			if ( tick ) {
+				interact_shader->workOn(tick_buffers);
+				collide_shader->workOn(tick_buffers);
+				tick = false;
+			} else {
+				interact_shader->workOn(tock_buffers);
+				collide_shader->workOn(tock_buffers);
+				tick = true;
 			}
+
+			/// Perform collide & stream steps
+			{
+				auto guard = collide_shader->use();
+
+				collide_shader->setUniform("fluidQuality", show_fluid_quality);
+				collide_shader->setUniform("iT", iT);
+				iT += 1;
+
+				collide_shader->dispatch(nX, nY);
+			}
+
+			last_lattice_update = timer::now();
+		}
+
+		/// Update mouse projection
+		{
+			const auto m = window.getMouse();
+
+			prevMouseState = currMouseState;
+			prevLatticeMouseX = currLatticeMouseX;
+			prevLatticeMouseY = currLatticeMouseY;
+
+			currMouseState = std::get<0>(m);
+			currLatticeMouseX = float(std::get<1>(m)) / window.getWidth()  * world_width  + nX/2;
+			currLatticeMouseY = float(std::get<2>(m)) / window.getHeight() * world_height + nY/2;
+		}
+
+		/// Handle mouse-based interaction
+		if ( currMouseState != 0 || prevMouseState != 0 ) {
+			auto guard = interact_shader->use();
+
+			interact_shader->setUniform("influxRequested", currMouseState == 1);
+			interact_shader->setUniform("wallRequested",   currMouseState == 2);
+
+			interact_shader->setUniform("startOfLine", prevLatticeMouseX, prevLatticeMouseY);
+			interact_shader->setUniform("endOfLine", currLatticeMouseX, currLatticeMouseY);
+
+			interact_shader->dispatch(nX, nY);
 		}
 
 		{
