@@ -1,12 +1,12 @@
-with import <nixpkgs> {};
+{ pkgs ? import <nixpkgs> { }, ... }:
 
-stdenvNoCC.mkDerivation rec {
+pkgs.stdenvNoCC.mkDerivation rec {
   name = "compustream-env";
-  env = buildEnv { name = name; paths = buildInputs; };
+  env = pkgs.buildEnv { name = name; paths = buildInputs; };
 
-  buildInputs = [
-    fish
-    git cmake
+  buildInputs = with pkgs; [
+    cmake
+    universal-ctags
     gcc8
     gdb cgdb
     glfw3
