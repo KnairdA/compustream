@@ -13,13 +13,6 @@ uniform uint iT;
 
 uniform bool show_fluid_quality;
 
-/// Fluid characteristics
-
-const float physCharLength   = 1.0;
-const float physCharVelocity = 1.0;
-const float physViscosity    = 0.01;
-const float latticeCharVelocity = 0.01;
-
 /// LBM constants
 
 const uint  q         = 9;
@@ -29,6 +22,13 @@ const float weight[q] = float[](
 	1./36 , 1./9., 1./36.
 );
 const float invCs2 = 1./3.;
+
+/// Fluid characteristics
+
+const float physCharLength   = 1.0;
+const float physCharVelocity = 1.0;
+const float physViscosity    = 0.01;
+const float latticeCharVelocity = 0.1;
 
 /// Unit conversion
 

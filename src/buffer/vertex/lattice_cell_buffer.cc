@@ -20,13 +20,15 @@ std::vector<GLfloat> makeLattice(GLuint nX, GLuint nY) {
 	return data;
 }
 
-LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY) {
-	glGenVertexArrays(1, &_array);
+LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY):
+	_nX(nX), _nY(nY) {
 	glGenBuffers(1, &_buffer);
+	init();
+}
 
-	const std::vector<GLfloat> data = makeLattice(nX, nY);
+void LatticeCellBuffer::init() {
+	const std::vector<GLfloat> data = makeLattice(_nX, _nY);
 
-	glBindVertexArray(_array);
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
 	glBufferData(
 		GL_ARRAY_BUFFER,
@@ -34,14 +36,10 @@ LatticeCellBuffer::LatticeCellBuffer(GLuint nX, GLuint nY) {
 		data.data(),
 		GL_DYNAMIC_DRAW
 	);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, 0, nullptr);
 }
 
 LatticeCellBuffer::~LatticeCellBuffer() {
 	glDeleteBuffers(1, &_buffer);
-	glDeleteVertexArrays(1, &_array);
 }
 
 GLuint LatticeCellBuffer::getBuffer() const {

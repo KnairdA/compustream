@@ -105,6 +105,8 @@ int render() {
 		return -1;
 	}
 
+	auto reset_key = window.getKeyWatcher(GLFW_KEY_R);
+
 	auto pause_key  = window.getKeyWatcher(GLFW_KEY_SPACE);
 	bool update_lattice = true;
 
@@ -135,6 +137,11 @@ int render() {
 	bool tick = true;
 
 	window.render([&](bool window_size_changed) {
+		if ( reset_key.wasClicked() ) {
+			iT = 0;
+			lattice_a->init();
+			lattice_b->init();
+		}
 		if ( pause_key.wasClicked() ) {
 			update_lattice = !update_lattice;
 		}

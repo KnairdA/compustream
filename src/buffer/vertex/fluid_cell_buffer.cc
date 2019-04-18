@@ -4,17 +4,27 @@
 
 FluidCellBuffer::FluidCellBuffer(GLuint nX, GLuint nY, std::function<int(int,int)>&& geometry):
 	_nX(nX), _nY(nY) {
-	glGenVertexArrays(1, &_array);
 	glGenBuffers(1, &_buffer);
-
 	glBindVertexArray(_array);
+	init(std::forward<decltype(geometry)>(geometry));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+}
+
+FluidCellBuffer::~FluidCellBuffer() {
+	glDeleteBuffers(1, &_buffer);
+	glDeleteVertexArrays(1, &_array);
+}
+
+void FluidCellBuffer::init(std::function<int(int,int)>&& geometry) {
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
 
-	std::vector<GLfloat> data(3*nX*nY, GLfloat{});
+	std::vector<GLfloat> data(3*_nX*_nY, GLfloat{});
 
-	for ( int x = 0; x < nX; ++x ) {
-		for ( int y = 0; y < nY; ++y ) {
-			data[3*nX*y + 3*x + 2] = geometry(x,y);
+	for ( int x = 0; x < _nX; ++x ) {
+		for ( int y = 0; y < _nY; ++y ) {
+			data[3*_nX*y + 3*x + 2] = geometry(x,y);
 		}
 	}
 
@@ -24,14 +34,6 @@ FluidCellBuffer::FluidCellBuffer(GLuint nX, GLuint nY, std::function<int(int,int
 		data.data(),
 		GL_DYNAMIC_DRAW
 	);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-}
-
-FluidCellBuffer::~FluidCellBuffer() {
-	glDeleteBuffers(1, &_buffer);
-	glDeleteVertexArrays(1, &_array);
 }
 
 GLuint FluidCellBuffer::getBuffer() const {
