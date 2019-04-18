@@ -10,10 +10,8 @@ out VS_OUT {
 uniform uint nX;
 uniform uint nY;
 
-uniform bool fluidQuality;
-
-const float velocityDisplayAmplifier = 3.0;
-const int   qualityDisplayRestrictor = 6;
+uniform bool show_fluid_quality;
+uniform int  palette_factor;
 
 float unit(float x) {
 	return 1.0/(1.0+exp(-x));
@@ -47,7 +45,7 @@ float restrictedQuality(float quality) {
 	if ( quality < 0.0 ) {
 		return 0.0;
 	} else {
-		return min(1.0, quality / qualityDisplayRestrictor);
+		return min(1.0, quality / palette_factor);
 	}
 }
 
@@ -84,13 +82,13 @@ void main() {
 	} else if ( isWallFrontier(material) ) {
 		vs_out.color = vec3(0.0, 0.0, 0.0);
 	} else {
-		if ( fluidQuality ) {
+		if ( show_fluid_quality ) {
 			vs_out.color = trafficLightPalette(restrictedQuality(VertexPosition.y));
 		} else {
 			vs_out.color = mix(
 				vec3(-0.5, 0.0, 1.0),
 				vec3( 1.0, 0.0, 0.0),
-				velocityDisplayAmplifier * norm(VertexPosition.xy)
+				norm(VertexPosition.xy) / float(palette_factor)
 			);
 		}
 	}

@@ -11,13 +11,14 @@ uniform uint nX;
 uniform uint nY;
 uniform uint iT;
 
-uniform bool fluidQuality;
+uniform bool show_fluid_quality;
 
 /// Fluid characteristics
 
 const float physCharLength   = 1.0;
 const float physCharVelocity = 1.0;
-const float physViscosity    = 0.1;
+const float physViscosity    = 0.01;
+const float latticeCharVelocity = 0.01;
 
 /// LBM constants
 
@@ -29,17 +30,16 @@ const float weight[q] = float[](
 );
 const float invCs2 = 1./3.;
 
-const float relaxationTime      = 0.6;
-const float relaxationFrequency = 1 / relaxationTime;
-
 /// Unit conversion
 
-const float convLength    = physCharLength / max(nX,nY);
-const float convTime      = (relaxationTime - 0.5) / invCs2 * convLength*convLength / physViscosity;
+const float resolution    = max(nX,nY);
+const float convLength    = physCharLength / resolution;
+const float convTime      = latticeCharVelocity / physCharVelocity * physCharLength / resolution;
 const float convVelocity  = convLength / convTime;
 const float convViscosity = convLength * convLength / convTime;
 
-const float latticeCharVelocity = physCharVelocity / convVelocity;
+const float relaxationTime = physViscosity / convViscosity * invCs2 + 0.5;
+const float relaxationFrequency = 1 / relaxationTime;
 
 /// Emergent fluid numbers
 
@@ -91,8 +91,8 @@ void set(uint x, uint y, int i, int j, float v) {
 
 void setFluidVelocity(uint x, uint y, vec2 v) {
 	const uint idx = indexOfFluidVertex(x, y);
-	fluidCells[idx + 0] = v.x;
-	fluidCells[idx + 1] = v.y;
+	fluidCells[idx + 0] = v.x*convVelocity;
+	fluidCells[idx + 1] = v.y*convVelocity;
 }
 
 void setFluidQuality(uint x, uint y, float knudsen, int quality) {
@@ -187,13 +187,13 @@ void main() {
 
 	if ( isBulkFluidCell(material) ) {
 		if ( isInflowCell(material) ) {
-			d = min(1.0+float(iT)*0.2/1000.0, 1.2);
+			v = vec2(min(float(iT)/5000.0*latticeCharVelocity, latticeCharVelocity), 0.0);
 		}
 		if ( isOutflowCell(material) ) {
 			d = 1.0;
 		}
 
-		if ( fluidQuality ) {
+		if ( show_fluid_quality ) {
 			const float approxKn = getLocalKnudsenApproximation(x,y,d,v);
 			setFluidQuality(x,y, approxKn, int(round(log2(approxKn / Kn))));
 		} else {

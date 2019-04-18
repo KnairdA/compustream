@@ -26,8 +26,6 @@
 GLuint maxLUPS = 100;
 GLuint nX = 512;
 GLuint nY = 256;
-bool   open_boundaries    = false;
-bool   show_fluid_quality = false;
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -47,17 +45,6 @@ glm::mat4 getMVP(float world_width, float world_height) {
 	);
 
 	return projection * view;
-}
-
-int setupPlainGeometry(int x, int y) {
-	if ( x == 0 || y == 0 || x == nX-1 || y == nY-1 ) {
-		return 0; // disable end of world
-	}
-	if (   ((x == 1 || x == nX-2) && (y > 0 && y < nY-1))
-	    || ((y == 1 || y == nY-2) && (x > 0 && x < nX-1)) ) {
-		return 2; // bounce back outer walls
-	}
-	return 1; // everything else shall be bulk fluid
 }
 
 int setupOpenGeometry(int x, int y) {
@@ -107,7 +94,7 @@ int render() {
 
 		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
 		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);
-		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY, open_boundaries ? setupOpenGeometry : setupPlainGeometry);
+		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY, setupOpenGeometry);
 
 		interact_shader = std::make_unique<ComputeShader>(INTERACT_SHADER_CODE);
 		collide_shader  = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
@@ -118,10 +105,15 @@ int render() {
 		return -1;
 	}
 
+	auto pause_key  = window.getKeyWatcher(GLFW_KEY_SPACE);
 	bool update_lattice = true;
-	bool tick           = true;
 
-	auto pause_key = window.getKeyWatcher(GLFW_KEY_SPACE);
+	auto toggle_key = window.getKeyWatcher(GLFW_KEY_T);
+	bool show_fluid_quality = false;
+
+	auto palette_factor_incr  = window.getKeyWatcher(GLFW_KEY_UP);
+	auto palette_factor_decr = window.getKeyWatcher(GLFW_KEY_DOWN);
+	int  palette_factor = 6;
 
 	int prevMouseState = 0;
 	float prevLatticeMouseX;
@@ -140,9 +132,23 @@ int render() {
 	auto last_lattice_update = timer::now();
 	auto last_lups_update    = timer::now();
 
+	bool tick = true;
+
 	window.render([&](bool window_size_changed) {
 		if ( pause_key.wasClicked() ) {
 			update_lattice = !update_lattice;
+		}
+
+		if ( toggle_key.wasClicked() ) {
+			show_fluid_quality = !show_fluid_quality;
+		}
+
+		if ( palette_factor_incr.wasClicked() ) {
+			palette_factor += 1;
+		}
+
+		if ( palette_factor_decr.wasClicked() ) {
+			palette_factor -= 1;
 		}
 
 		if ( window_size_changed ) {
@@ -173,7 +179,7 @@ int render() {
 			{
 				auto guard = collide_shader->use();
 
-				collide_shader->setUniform("fluidQuality", show_fluid_quality);
+				collide_shader->setUniform("show_fluid_quality", show_fluid_quality);
 				collide_shader->setUniform("iT", iT);
 				iT += 1;
 
@@ -215,7 +221,8 @@ int render() {
 			scene_shader->setUniform("MVP", MVP);
 			scene_shader->setUniform("nX", nX);
 			scene_shader->setUniform("nY", nY);
-			scene_shader->setUniform("fluidQuality", show_fluid_quality);
+			scene_shader->setUniform("show_fluid_quality", show_fluid_quality);
+			scene_shader->setUniform("palette_factor", palette_factor);
 
 			glClear(GL_COLOR_BUFFER_BIT);
 			fluid->draw();
@@ -263,14 +270,6 @@ bool parseArguments(int argc, char* argv[]) {
 				std::cerr << "Lattice size undefined." << std::endl;
 				return false;
 			}
-		}
-
-		if ( arg == "--open" ) {
-			open_boundaries = true;
-		}
-
-		if ( arg == "--quality" ) {
-			show_fluid_quality = true;
 		}
 	}
 	return true;
