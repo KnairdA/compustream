@@ -28,7 +28,7 @@ const float invCs2 = 1./3.;
 const float physCharLength   = 1.0;
 const float physCharVelocity = 1.0;
 const float physViscosity    = 0.01;
-const float latticeCharVelocity = 0.1;
+const float latticeCharVelocity = 0.005;
 
 /// Unit conversion
 
@@ -148,14 +148,6 @@ bool isOutflowCell(int material) {
 	return material == 6;
 }
 
-float getExternalMassInflux(int material) {
-	if ( material == 4 ) {
-		return 1.5;
-	} else {
-		return 0.0;
-	}
-};
-
 float getLocalKnudsenApproximation(uint x, uint y, float d, vec2 v) {
 	float knudsen = 0.0;
 
@@ -182,7 +174,7 @@ void main() {
 
 	const int material = getMaterial(x,y);
 
-	float d = max(density(x,y), getExternalMassInflux(material));
+	float d = density(x,y);
 	vec2  v = velocity(x,y,d);
 
 	if ( isBulkFluidCell(material) ) {

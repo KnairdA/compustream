@@ -213,11 +213,11 @@ int render() {
 		if ( currMouseState != 0 || prevMouseState != 0 ) {
 			auto guard = interact_shader->use();
 
-			interact_shader->setUniform("influxRequested", currMouseState == 1);
-			interact_shader->setUniform("wallRequested",   currMouseState == 2);
+			interact_shader->setUniform("wall_requested",  currMouseState == 1);
+			interact_shader->setUniform("fluid_requested", currMouseState == 2);
 
-			interact_shader->setUniform("startOfLine", prevLatticeMouseX, prevLatticeMouseY);
-			interact_shader->setUniform("endOfLine", currLatticeMouseX, currLatticeMouseY);
+			interact_shader->setUniform("start", prevLatticeMouseX, prevLatticeMouseY);
+			interact_shader->setUniform("end",   currLatticeMouseX, currLatticeMouseY);
 
 			interact_shader->dispatch(nX, nY);
 		}

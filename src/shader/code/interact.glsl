@@ -10,11 +10,11 @@ uniform uint nY;
 
 /// External influence
 
-uniform bool influxRequested;
-uniform bool wallRequested;
+uniform bool wall_requested;
+uniform bool fluid_requested;
 
-uniform vec2 startOfLine;
-uniform vec2 endOfLine;
+uniform vec2 start;
+uniform vec2 end;
 
 /// Vector utilities
 
@@ -39,10 +39,10 @@ float distanceToLineSegment(vec2 a, vec2 b, vec2 p) {
 }
 
 bool isNearLine(uint x, uint y, float eps) {
-	if ( startOfLine == endOfLine ) {
-		return norm(vec2(x,y) - endOfLine) < eps;
+	if ( start == end ) {
+		return norm(vec2(x,y) - end) < eps;
 	} else {
-		return distanceToLineSegment(startOfLine, endOfLine, vec2(x,y)) < eps;
+		return distanceToLineSegment(start, end, vec2(x,y)) < eps;
 	}
 }
 
@@ -83,6 +83,16 @@ void disableWallInterior(uint x, uint y) {
 	}
 }
 
+void fixWallExterior(uint x, uint y) {
+	for ( int i = -1; i <= 1; ++i ) {
+		for ( int j = -1; j <= 1; ++j ) {
+			if ( getMaterial(x+i,y+j)== 0 ) {
+				setMaterial(x+i,y+j,3);
+			}
+		}
+	}
+}
+
 /// Actual interaction kernel
 
 void main() {
@@ -97,24 +107,26 @@ void main() {
 
 	if ( material == 1 ) {
 		if ( isNearLine(x, y, 3) ) {
-			if ( influxRequested ) {
-				setMaterial(x,y,4);
-				return;
-			}
-			if ( wallRequested ) {
+			if ( wall_requested ) {
 				setMaterial(x,y,3);
 				return;
 			}
 		}
 	}
 
-	if ( material == 3 ) {
-		disableWallInterior(x,y);
+	if ( material == 0 || material == 3 ) {
+		if ( fluid_requested ) {
+			if ( isNearLine(x, y, 3) ) {
+					setMaterial(x,y,1);
+					fixWallExterior(x,y);
+					return;
+			}
+		}
 	}
 
-	if ( material == 4 ) {
-		// reset influx material after execution
-		setMaterial(x,y,1);
+
+	if ( material == 3 ) {
+		disableWallInterior(x,y);
 	}
 }
 )";
