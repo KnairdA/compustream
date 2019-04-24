@@ -4,4 +4,8 @@
 
 For details see [Fun with compute shaders and fluid dynamics](https://blog.kummerlaender.eu/article/fun_with_compute_shaders_and_fluid_dynamics/).
 
-![Artfully amplified implosion](https://static.kummerlaender.eu/media/boltzstern_1.jpg)
+## Impressions
+
+[![Interactive wall drawing](https://static.kummerlaender.eu/media/compustream_with_walls.poster.jpg)](https://static.kummerlaender.eu/media/compustream_with_walls.mp4)
+
+[![Simulation quality display](https://static.kummerlaender.eu/media/compustream_quality_display.teaser.jpg)](https://static.kummerlaender.eu/media/compustream_quality_display.mp4)
