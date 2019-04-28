@@ -45,8 +45,10 @@ void main() {
 	}
 
 	// simple central difference discretization of the 2d curl operator
-	const float dxvy = (getFluidVelocity(x+1,y).y - getFluidVelocity(x-1,y).y) / (2*convLength);
-	const float dyvx = (getFluidVelocity(x,y+1).x - getFluidVelocity(x,y-1).x) / (2*convLength);
+	const float dxvy = (getFluidVelocity(x+1,y).y - getFluidVelocity(x-1,y).y)
+	                 / (2*convLength);
+	const float dyvx = (getFluidVelocity(x,y+1).x - getFluidVelocity(x,y-1).x)
+	                 / (2*convLength);
 
 	setFluidExtra(x, y,	dxvy - dyvx);
 }

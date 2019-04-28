@@ -10,13 +10,11 @@ out VS_OUT {
 uniform uint nX;
 uniform uint nY;
 
-uniform bool show_fluid_quality;
+uniform bool show_quality;
 uniform bool show_curl;
 uniform int  palette_factor;
 
-float unit(float x) {
-	return 1.0/(1.0+exp(-x));
-}
+/// Vector utilities
 
 float sq(float x) {
 	return x*x;
@@ -26,6 +24,8 @@ float norm(vec2 v) {
 	return sqrt(sq(v.x)+sq(v.y));
 }
 
+/// Array indexing
+
 vec2 fluidVertexAtIndex(uint i) {
 	const float y = floor(float(i) / float(nX));
 	return vec2(
@@ -33,6 +33,8 @@ vec2 fluidVertexAtIndex(uint i) {
 		y
 	);
 }
+
+/// Material number meaning
 
 bool isInactive(int material) {
 	return material == 0;
@@ -42,6 +44,8 @@ bool isWallFrontier(int material) {
 	return material == 2 || material == 3;
 }
 
+/// Data restriction
+
 float restrictedQuality(float quality) {
 	if ( quality < 0.0 ) {
 		return 0.0;
@@ -50,7 +54,17 @@ float restrictedQuality(float quality) {
 	}
 }
 
-vec3 trafficLightPalette(float x) {
+float restrictedCurl(float curl) {
+	if ( abs(curl) < 1.0 ) {
+		return 0.5;
+	} else {
+		return 0.5 + 0.5*min(1.0, curl / (50*palette_factor));
+	}
+}
+
+/// Color palettes
+
+vec3 greenYellowRedPalette(float x) {
 	if ( x < 0.5 ) {
 		return mix(
 			vec3(0.0, 1.0, 0.0),
@@ -98,6 +112,8 @@ vec3 blueRedPalette(float x) {
 	);
 }
 
+/// Actual vertex shader
+
 void main() {
 	const vec2 idx = fluidVertexAtIndex(gl_VertexID);
 
@@ -115,19 +131,14 @@ void main() {
 	} else if ( isWallFrontier(material) ) {
 		vs_out.color = vec3(0.0, 0.0, 0.0);
 	} else {
-		if ( show_fluid_quality ) {
-			vs_out.color = trafficLightPalette(
+		if ( show_quality ) {
+			vs_out.color = greenYellowRedPalette(
 				restrictedQuality(VertexPosition.y)
 			);
 		} else if ( show_curl ) {
-			const float factor = 1.0 / float(100*palette_factor);
-			if ( abs(VertexPosition.x) > 1.0 ) {
-				vs_out.color = blueBlackRedPalette(
-					0.5 + (VertexPosition.x * factor)
-				);
-			} else {
-				vs_out.color = vec3(0.0,0.0,0.0);
-			}
+			vs_out.color = blueBlackRedPalette(
+				restrictedCurl(VertexPosition.x)
+			);
 		} else {
 			vs_out.color = blueRedPalette(
 				norm(VertexPosition.xy) / palette_factor

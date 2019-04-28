@@ -11,7 +11,7 @@ uniform uint nX;
 uniform uint nY;
 uniform uint iT;
 
-uniform bool show_fluid_quality;
+uniform bool show_quality;
 
 /// LBM constants
 
@@ -185,7 +185,7 @@ void main() {
 			d = 1.0;
 		}
 
-		if ( show_fluid_quality ) {
+		if ( show_quality ) {
 			const float approxKn = getLocalKnudsenApproximation(x,y,d,v);
 			setFluidQuality(x,y, approxKn, int(round(log2(approxKn / Kn))));
 		} else {

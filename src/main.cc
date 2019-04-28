@@ -176,7 +176,7 @@ int render() {
 			palette_factor += 1;
 		}
 		if ( palette_factor_decr.wasClicked() ) {
-			palette_factor -= 1;
+			palette_factor = std::max(1, palette_factor-1);
 		}
 
 		if ( window_size_changed ) {
@@ -209,7 +209,7 @@ int render() {
 			{
 				auto guard = collide_shader->use();
 
-				collide_shader->setUniform("show_fluid_quality", display_mode == DisplayMode::QUALITY);
+				collide_shader->setUniform("show_quality", display_mode == DisplayMode::QUALITY);
 				collide_shader->setUniform("iT", iT);
 				iT += 1;
 
@@ -262,18 +262,18 @@ int render() {
 
 			switch ( display_mode ) {
 				case DisplayMode::VELOCITY:
-					scene_shader->setUniform("show_fluid_quality", false);
-					scene_shader->setUniform("show_curl", false);
+					scene_shader->setUniform("show_quality", false);
+					scene_shader->setUniform("show_curl",    false);
 					fluid->draw();
 					break;
 				case DisplayMode::QUALITY:
-					scene_shader->setUniform("show_fluid_quality", true);
-					scene_shader->setUniform("show_curl", false);
+					scene_shader->setUniform("show_quality", true);
+					scene_shader->setUniform("show_curl",    false);
 					fluid->draw();
 					break;
 				case DisplayMode::CURL:
-					scene_shader->setUniform("show_fluid_quality", false);
-					scene_shader->setUniform("show_curl", true);
+					scene_shader->setUniform("show_quality", false);
+					scene_shader->setUniform("show_curl",    true);
 					extra->draw();
 					break;
 			}
