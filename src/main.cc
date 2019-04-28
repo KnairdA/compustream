@@ -20,12 +20,19 @@
 
 #include "shader/code/interact.glsl"
 #include "shader/code/collide.glsl"
+#include "shader/code/extra.glsl"
 
 #include "timer.h"
 
 GLuint maxLUPS = 100;
 GLuint nX = 512;
 GLuint nY = 256;
+
+enum DisplayMode {
+	VELOCITY,
+	QUALITY,
+	CURL
+};
 
 float getWorldHeight(int window_width, int window_height, float world_width) {
 	return world_width / window_width * window_height;
@@ -84,9 +91,11 @@ int render() {
 	std::unique_ptr<LatticeCellBuffer> lattice_a;
 	std::unique_ptr<LatticeCellBuffer> lattice_b;
 	std::unique_ptr<FluidCellBuffer>   fluid;
+	std::unique_ptr<FluidCellBuffer>   extra;
 
 	std::unique_ptr<ComputeShader> interact_shader;
 	std::unique_ptr<ComputeShader> collide_shader;
+	std::unique_ptr<ComputeShader> extra_shader;
 
 	window.init([&]() {
 		scene_shader = std::make_unique<GraphicShader>(
@@ -94,9 +103,11 @@ int render() {
 
 		lattice_a = std::make_unique<LatticeCellBuffer>(nX, nY);
 		lattice_b = std::make_unique<LatticeCellBuffer>(nX, nY);
+		extra     = std::make_unique<  FluidCellBuffer>(nX, nY, setupOpenGeometry);
 		fluid     = std::make_unique<  FluidCellBuffer>(nX, nY, setupOpenGeometry);
 
 		interact_shader = std::make_unique<ComputeShader>(INTERACT_SHADER_CODE);
+		extra_shader    = std::make_unique<ComputeShader>(EXTRA_SHADER_CODE);
 		collide_shader  = std::make_unique<ComputeShader>(COLLIDE_SHADER_CODE);
 	});
 
@@ -110,8 +121,10 @@ int render() {
 	auto pause_key  = window.getKeyWatcher(GLFW_KEY_SPACE);
 	bool update_lattice = true;
 
-	auto toggle_key = window.getKeyWatcher(GLFW_KEY_T);
-	bool show_fluid_quality = false;
+	auto velocity_mode_key = window.getKeyWatcher(GLFW_KEY_V);
+	auto quality_mode_key  = window.getKeyWatcher(GLFW_KEY_Q);
+	auto curl_mode_key     = window.getKeyWatcher(GLFW_KEY_C);
+	DisplayMode display_mode = DisplayMode::VELOCITY;
 
 	auto palette_factor_incr  = window.getKeyWatcher(GLFW_KEY_UP);
 	auto palette_factor_decr = window.getKeyWatcher(GLFW_KEY_DOWN);
@@ -125,8 +138,8 @@ int render() {
 	float currLatticeMouseX;
 	float currLatticeMouseY;
 
-	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer() };
-	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer() };
+	auto tick_buffers = { lattice_a->getBuffer(), lattice_b->getBuffer(), fluid->getBuffer(), extra->getBuffer() };
+	auto tock_buffers = { lattice_b->getBuffer(), lattice_a->getBuffer(), fluid->getBuffer(), extra->getBuffer() };
 
 	GLuint iT = 0;
 	int statLUPS = 0;
@@ -146,14 +159,22 @@ int render() {
 			update_lattice = !update_lattice;
 		}
 
-		if ( toggle_key.wasClicked() ) {
-			show_fluid_quality = !show_fluid_quality;
+		if ( velocity_mode_key.wasClicked() ) {
+			display_mode = DisplayMode::VELOCITY;
+			fluid->enable();
+		}
+		if ( quality_mode_key.wasClicked() ) {
+			display_mode = DisplayMode::QUALITY;
+			fluid->enable();
+		}
+		if ( curl_mode_key.wasClicked() ) {
+			display_mode = DisplayMode::CURL;
+			extra->enable();
 		}
 
 		if ( palette_factor_incr.wasClicked() ) {
 			palette_factor += 1;
 		}
-
 		if ( palette_factor_decr.wasClicked() ) {
 			palette_factor -= 1;
 		}
@@ -175,10 +196,12 @@ int render() {
 			if ( tick ) {
 				interact_shader->workOn(tick_buffers);
 				collide_shader->workOn(tick_buffers);
+				extra_shader->workOn(tick_buffers);
 				tick = false;
 			} else {
 				interact_shader->workOn(tock_buffers);
 				collide_shader->workOn(tock_buffers);
+				extra_shader->workOn(tock_buffers);
 				tick = true;
 			}
 
@@ -186,11 +209,16 @@ int render() {
 			{
 				auto guard = collide_shader->use();
 
-				collide_shader->setUniform("show_fluid_quality", show_fluid_quality);
+				collide_shader->setUniform("show_fluid_quality", display_mode == DisplayMode::QUALITY);
 				collide_shader->setUniform("iT", iT);
 				iT += 1;
 
 				collide_shader->dispatch(nX, nY);
+			}
+
+			if ( display_mode == DisplayMode::CURL ) {
+				auto guard = extra_shader->use();
+				extra_shader->dispatch(nX, nY);
 			}
 
 			last_lattice_update = timer::now();
@@ -228,11 +256,27 @@ int render() {
 			scene_shader->setUniform("MVP", MVP);
 			scene_shader->setUniform("nX", nX);
 			scene_shader->setUniform("nY", nY);
-			scene_shader->setUniform("show_fluid_quality", show_fluid_quality);
 			scene_shader->setUniform("palette_factor", palette_factor);
 
 			glClear(GL_COLOR_BUFFER_BIT);
-			fluid->draw();
+
+			switch ( display_mode ) {
+				case DisplayMode::VELOCITY:
+					scene_shader->setUniform("show_fluid_quality", false);
+					scene_shader->setUniform("show_curl", false);
+					fluid->draw();
+					break;
+				case DisplayMode::QUALITY:
+					scene_shader->setUniform("show_fluid_quality", true);
+					scene_shader->setUniform("show_curl", false);
+					fluid->draw();
+					break;
+				case DisplayMode::CURL:
+					scene_shader->setUniform("show_fluid_quality", false);
+					scene_shader->setUniform("show_curl", true);
+					extra->draw();
+					break;
+			}
 		}
 	});
 

@@ -11,6 +11,7 @@ uniform uint nX;
 uniform uint nY;
 
 uniform bool show_fluid_quality;
+uniform bool show_curl;
 uniform int  palette_factor;
 
 float unit(float x) {
@@ -65,6 +66,38 @@ vec3 trafficLightPalette(float x) {
 	}
 }
 
+vec3 blueBlackRedPalette(float x) {
+	if ( x < 0.5 ) {
+		return mix(
+			vec3(0.0, 0.0, 1.0),
+			vec3(0.0, 0.0, 0.0),
+			2*x
+		);
+	} else {
+		return mix(
+			vec3(0.0, 0.0, 0.0),
+			vec3(1.0, 0.0, 0.0),
+			2*(x - 0.5)
+		);
+	}
+}
+
+vec3 blackGoldPalette(float x) {
+	return mix(
+		vec3(0.0, 0.0, 0.0),
+		vec3(0.5, 0.35, 0.05),
+		x
+	);
+}
+
+vec3 blueRedPalette(float x) {
+	return mix(
+		vec3(0.0, 0.0, 1.0),
+		vec3(1.0, 0.0, 0.0),
+		x
+	);
+}
+
 void main() {
 	const vec2 idx = fluidVertexAtIndex(gl_VertexID);
 
@@ -83,12 +116,21 @@ void main() {
 		vs_out.color = vec3(0.0, 0.0, 0.0);
 	} else {
 		if ( show_fluid_quality ) {
-			vs_out.color = trafficLightPalette(restrictedQuality(VertexPosition.y));
+			vs_out.color = trafficLightPalette(
+				restrictedQuality(VertexPosition.y)
+			);
+		} else if ( show_curl ) {
+			const float factor = 1.0 / float(100*palette_factor);
+			if ( abs(VertexPosition.x) > 1.0 ) {
+				vs_out.color = blueBlackRedPalette(
+					0.5 + (VertexPosition.x * factor)
+				);
+			} else {
+				vs_out.color = vec3(0.0,0.0,0.0);
+			}
 		} else {
-			vs_out.color = mix(
-				vec3(-0.5, 0.0, 1.0),
-				vec3( 1.0, 0.0, 0.0),
-				norm(VertexPosition.xy) / float(palette_factor)
+			vs_out.color = blueRedPalette(
+				norm(VertexPosition.xy) / palette_factor
 			);
 		}
 	}

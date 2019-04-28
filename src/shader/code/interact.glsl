@@ -4,6 +4,7 @@ static const std::string INTERACT_SHADER_CODE = R"(
 layout (local_size_x = 1, local_size_y = 1) in;
 
 layout (std430, binding=3) buffer bufferFluid { float fluidCells[]; };
+layout (std430, binding=4) buffer bufferExtra { float extraCells[]; };
 
 uniform uint nX;
 uniform uint nY;
@@ -62,6 +63,7 @@ int getMaterial(uint x, uint y) {
 void setMaterial(uint x, uint y, int m) {
 	const uint idx = indexOfFluidVertex(x, y);
 	fluidCells[idx + 2] = m;
+	extraCells[idx + 2] = m;
 }
 
 /// Geometry cleanup

@@ -16,6 +16,7 @@ public:
 	FluidCellBuffer(GLuint nX, GLuint nY, std::function<int(int,int)>&& geometry);
 	~FluidCellBuffer();
 
+	void enable();
 	void init(std::function<int(int,int)>&& geometry);
 
 	GLuint getBuffer() const;
