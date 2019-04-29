@@ -23,6 +23,11 @@ uint indexOfFluidVertex(uint x, uint y) {
 
 /// Data access
 
+int getMaterial(uint x, uint y) {
+	const uint idx = indexOfFluidVertex(x, y);
+	return int(extraCells[idx + 2]);
+}
+
 vec2 getFluidVelocity(uint x, uint y) {
 	const uint idx = indexOfFluidVertex(x, y);
 	return vec2(
@@ -41,6 +46,15 @@ void main() {
 	const uint y = gl_GlobalInvocationID.y;
 
 	if ( !(x < nX && y < nY) ) {
+		return;
+	}
+
+	if ( getMaterial(x,y)   != 1
+	  || getMaterial(x-1,y) != 1
+	  || getMaterial(x+1,y) != 1
+	  || getMaterial(x,y-1) != 1
+	  || getMaterial(x,y+1) != 1 ) {
+		setFluidExtra(x, y,	0.0);
 		return;
 	}
 

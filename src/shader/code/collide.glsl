@@ -133,7 +133,7 @@ float equilibrium(float d, vec2 v, int i, int j) {
 /// Material number meaning (geometry is only changed by the interaction shader)
 
 bool isBulkFluidCell(int material) {
-	return material == 1 || material == 4 || material == 5 || material == 6;
+	return material == 1 || material == 5 || material == 6;
 }
 
 bool isBounceBackCell(int material) {
