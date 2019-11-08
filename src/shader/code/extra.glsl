@@ -9,7 +9,7 @@ layout (std430, binding=4) buffer bufferExtra { float extraCells[]; };
 uniform uint nX;
 uniform uint nY;
 
-const float convLength = 1.0 / float(max(nX,nY));
+const float convLength = 1.0 / float(min(nX,nY));
 
 /// Array indexing
 

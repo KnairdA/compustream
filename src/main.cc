@@ -24,7 +24,7 @@
 
 #include "timer.h"
 
-GLuint maxLUPS = 100;
+GLuint maxLUPF = 100;
 GLuint nX = 512;
 GLuint nY = 256;
 
@@ -184,25 +184,19 @@ int render() {
 			MVP = getMVP(world_width, world_height);
 		}
 
-		if ( update_lattice && timer::millisecondsSince(last_lattice_update) >= 1000/maxLUPS ) {
+		if ( update_lattice ) {
 			if ( timer::secondsSince(last_lups_update) >= 1.0 ) {
-				std::cout << "\rComputing about " << statLUPS << " lattice updates per second." << std::flush;
+				std::cout << "\r~ " << nX*nY * statLUPS / timer::secondsSince(last_lups_update) * 1e-6 << " MLUPS" << std::flush;
 				statLUPS = 0;
 				last_lups_update = timer::now();
 			}
 
-			statLUPS += 1;
-
 			if ( tick ) {
 				interact_shader->workOn(tick_buffers);
-				collide_shader->workOn(tick_buffers);
 				extra_shader->workOn(tick_buffers);
-				tick = false;
 			} else {
 				interact_shader->workOn(tock_buffers);
-				collide_shader->workOn(tock_buffers);
 				extra_shader->workOn(tock_buffers);
-				tick = true;
 			}
 
 			/// Perform collide & stream steps
@@ -213,7 +207,19 @@ int render() {
 				collide_shader->setUniform("iT", iT);
 				iT += 1;
 
-				collide_shader->dispatch(nX, nY);
+				for (auto i=0; i < maxLUPF; ++i) {
+					if ( tick ) {
+						collide_shader->workOn(tick_buffers);
+						tick = false;
+					} else {
+						collide_shader->workOn(tock_buffers);
+						tick = true;
+					}
+
+					collide_shader->dispatch(nX, nY);
+				}
+
+				statLUPS += maxLUPF;
 			}
 
 			if ( display_mode == DisplayMode::CURL ) {
@@ -289,18 +295,18 @@ bool parseArguments(int argc, char* argv[]) {
 	for ( int i = 1; i < argc; ++i ) {
 		const auto& arg = std::string_view(argv[i]);
 
-		if ( arg == "--lups" ) {
+		if ( arg == "--lupf" ) {
 			if ( i+1 < argc ) {
 				try {
 					i       += 1;
-					maxLUPS = std::stoi(argv[i]);
+					maxLUPF = std::stoi(argv[i]);
 				}
 				catch ( std::invalid_argument& ex ) {
-					std::cerr << "Maximum lattice updates per second malformed." << std::endl;
+					std::cerr << "Maximum lattice updates per frame malformed." << std::endl;
 					return false;
 				}
 			} else {
-				std::cerr << "Maximum lattice updates per second undefined." << std::endl;
+				std::cerr << "Maximum lattice updates per frame undefined." << std::endl;
 				return false;
 			}
 		}

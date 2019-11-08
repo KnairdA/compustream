@@ -58,7 +58,7 @@ float restrictedCurl(float curl) {
 	if ( abs(curl) < 1.0 ) {
 		return 0.5;
 	} else {
-		return 0.5 + 0.5*min(1.0, curl / (50*palette_factor));
+		return 0.5 + 0.5*min(1.0, curl / sq(palette_factor));
 	}
 }
 

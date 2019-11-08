@@ -14,7 +14,6 @@ Window::Window(const std::string& title):
 	_handle(glfwCreateWindow(_width, _height, title.c_str(), NULL, NULL)) {
 	if ( _handle != nullptr ) {
 		glfwMakeContextCurrent(_handle);
-		glfwSwapInterval(0);
 		if ( glewInit() == GLEW_OK ) {
 			_good = true;
 		}

@@ -1,7 +1,7 @@
 static const std::string COLLIDE_SHADER_CODE = R"(
 #version 430
 
-layout (local_size_x = 1, local_size_y = 1) in;
+layout (local_size_x = 32, local_size_y = 1) in;
 
 layout (std430, binding=1) buffer bufferCollide  { float collideCells[];  };
 layout (std430, binding=2) buffer bufferStream   { float streamCells[];   };
@@ -32,7 +32,7 @@ const float latticeCharVelocity = 0.005;
 
 /// Unit conversion
 
-const float resolution    = max(nX,nY);
+const float resolution    = min(nX,nY);
 const float convLength    = physCharLength / resolution;
 const float convTime      = latticeCharVelocity / physCharVelocity * physCharLength / resolution;
 const float convVelocity  = convLength / convTime;
@@ -110,7 +110,7 @@ int getMaterial(uint x, uint y) {
 
 float density(uint x, uint y) {
 	const uint idx = indexOfLatticeCell(x, y);
-	float d = 0.;
+	float d = 0.f;
 	for ( int i = 0; i < q; ++i ) {
 		d += collideCells[idx + i];
 	}
@@ -118,7 +118,7 @@ float density(uint x, uint y) {
 }
 
 vec2 velocity(uint x, uint y, float d) {
-	return 1./d * vec2(
+	return 1.f/d * vec2(
 		get(x,y, 1, 0) - get(x,y,-1, 0) + get(x,y, 1, 1) - get(x,y,-1,-1) + get(x,y, 1,-1) - get(x,y,-1,1),
 		get(x,y, 0, 1) - get(x,y, 0,-1) + get(x,y, 1, 1) - get(x,y,-1,-1) - get(x,y, 1,-1) + get(x,y,-1,1)
 	);
@@ -127,7 +127,7 @@ vec2 velocity(uint x, uint y, float d) {
 /// Equilibrium distribution
 
 float equilibrium(float d, vec2 v, int i, int j) {
-	return w(i,j) * d * (1 + 3*comp(i,j,v) + 4.5*sq(comp(i,j,v)) - 1.5*sq(norm(v)));
+	return w(i,j) * d * (1.f + 3.f*comp(i,j,v) + 4.5f*sq(comp(i,j,v)) - 1.5f*sq(norm(v)));
 }
 
 /// Material number meaning (geometry is only changed by the interaction shader)
@@ -179,10 +179,10 @@ void main() {
 
 	if ( isBulkFluidCell(material) ) {
 		if ( isInflowCell(material) ) {
-			v = vec2(min(float(iT)/5000.0*latticeCharVelocity, latticeCharVelocity), 0.0);
+			v = vec2(min(float(iT)/100.f*latticeCharVelocity, latticeCharVelocity), 0.f);
 		}
 		if ( isOutflowCell(material) ) {
-			d = 1.0;
+			d = 1.f;
 		}
 
 		if ( show_quality ) {
